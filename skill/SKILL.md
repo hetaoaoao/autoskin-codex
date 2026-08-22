@@ -44,7 +44,11 @@ build themes from semantic data and ordinary asset files. Attribute the runtime 
 
 6. Review fullscreen, banner, chat, narrow-width, safe-area, and interaction states. Do not
    install while any preview/live mismatch is unexplained.
-7. On the first macOS install, prepare the bundled safe runtime:
+7. On Windows, prefer the native `AutoSkin.exe` tray app. Its first launch installs or updates the
+   managed runtime, seeds the bundled example, applies the skin, and registers login startup without
+   requiring a PowerShell installation command. The tray menu mirrors macOS: Themes, Original Codex
+   Skin, Open Theme Folder, and Quit AutoSkin.
+8. On the first macOS install, prepare the bundled safe runtime:
 
    ```bash
    bash scripts/autoskin-macos.sh install --no-start
@@ -52,14 +56,14 @@ build themes from semantic data and ordinary asset files. Attribute the runtime 
 
    The official app's bundled Node.js is used when available; Homebrew and SwiftBar are not
    required.
-8. Run the theme installer only after validation:
+9. Run the theme installer only after validation:
 
    ```bash
    python3 scripts/install_theme.py <directory> --apply
    ```
 
    Read `references/runtime-install.md` before install, compatibility repair, recovery, or runtime changes.
-9. Use the installed runtime for lifecycle actions:
+10. Use the installed runtime for lifecycle actions:
 
    ```bash
    bash scripts/autoskin-macos.sh status
@@ -92,7 +96,9 @@ build themes from semantic data and ordinary asset files. Attribute the runtime 
 - `scripts/install_theme.py`: preflighted, snapshot-first installer for an existing safe runtime.
 - `scripts/autoskin-macos.sh`: bundled macOS runtime install, launch, switch, verify,
   pause/resume, live restore, and uninstall entry point. Reinstall the runtime for compatibility repair.
-- `scripts/*.ps1`: Windows runtime installation, launch, verification, watch, and restoration.
+- `../app/windows/`: native Windows tray application and GUI-driven first-run installation. The
+  PowerShell scripts remain optional automation and compatibility entry points.
+- `scripts/*.ps1`: optional Windows automation for launch, verification, watch, and restoration.
 - `scripts/adopt-runtime-macos.py`: migrate an existing runtime to this skill without changing the
   selected theme or official color configuration.
 - `assets/renderer-inject.js`, `styles/dream/`, and `themes/`: attributed safe runtime resources.

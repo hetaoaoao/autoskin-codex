@@ -1,132 +1,90 @@
 [CmdletBinding()]
 param(
-  [int]$Port = 9335,
+  [int]$Port = 0,
   [switch]$RestartExisting,
   [string]$ProfilePath,
   [switch]$ForegroundInjector
 )
 
 $ErrorActionPreference = 'Stop'
-$SkillRoot = Split-Path -Parent $PSScriptRoot
-$Injector = Join-Path $PSScriptRoot 'injector.mjs'
-$LegacyStateRoot = Join-Path $env:LOCALAPPDATA 'CodexDreamSkin'
-$StateRoot = Join-Path $env:LOCALAPPDATA 'CodexAutoSkin'
-if (-not (Test-Path -LiteralPath $StateRoot) -and (Test-Path -LiteralPath $LegacyStateRoot)) {
+. (Join-Path $PSScriptRoot 'common-windows.ps1')
+$operation = Enter-AutoSkinLock
+try {
+  $StateRoot = $script:AutoSkinStateRoot
+  $StatePath = Join-Path $StateRoot 'state.json'
+  $PausePath = Join-Path $StateRoot 'paused'
+  $Injector = Join-Path $PSScriptRoot 'injector.mjs'
+  if (-not (Test-Path -LiteralPath $Injector -PathType Leaf)) { throw "Injector not found: $Injector" }
   New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
-  foreach ($entry in @('runtime', 'themes-private', 'install-state.json', 'config.before-dream-skin.toml', 'state.json', 'paused')) {
-    $sourceEntry = Join-Path $LegacyStateRoot $entry
-    if (Test-Path -LiteralPath $sourceEntry) { Copy-Item -LiteralPath $sourceEntry -Destination $StateRoot -Recurse }
+
+  $previous = Read-AutoSkinJson $StatePath
+  if ($Port -eq 0 -and $previous -and $previous.port) {
+    $candidate = [int]$previous.port
+    if (Test-AutoSkinCdp $candidate) { $Port = $candidate }
   }
-}
-$StatePath = Join-Path $StateRoot 'state.json'
-$StdoutPath = Join-Path $StateRoot 'injector.log'
-$StderrPath = Join-Path $StateRoot 'injector-error.log'
-New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
-
-function Test-CodexDebugPort([int]$CandidatePort) {
-  # Chromium may bind DevTools to either loopback stack depending on boot state;
-  # accept whichever answers.
-  foreach ($loopback in @('127.0.0.1', '[::1]')) {
-    try {
-      $targets = Invoke-RestMethod "http://$($loopback):$($CandidatePort)/json/list" -TimeoutSec 1
-      if ($targets | Where-Object { $_.type -eq 'page' -and $_.url -like 'app://*' }) { return $true }
-    } catch {}
+  $Port = Resolve-AutoSkinPort $Port
+  $node = Get-AutoSkinNode
+  $codex = Get-AutoSkinCodex
+  $running = @(Get-AutoSkinCodexProcesses $codex)
+  $debugReady = Test-AutoSkinCdp $Port
+  if (-not $debugReady -and $running.Count -gt 0) {
+    if (-not $RestartExisting) {
+      throw 'Codex is already running without the requested AutoSkin debug session. Close it or rerun with -RestartExisting.'
+    }
+    Stop-AutoSkinCodex $codex
   }
-  return $false
-}
 
-function Stop-CodexCompletely {
-  $visible = @(Get-Process ChatGPT -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 })
-  foreach ($process in $visible) { [void]$process.CloseMainWindow() }
-  Start-Sleep -Seconds 2
-  $deadline = (Get-Date).AddSeconds(12)
-  while ((Get-Date) -lt $deadline) {
-    $procs = @(Get-Process ChatGPT -ErrorAction SilentlyContinue)
-    if ($procs.Count -eq 0) { break }
-    $procs | Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Milliseconds 300
+  if (-not $debugReady) {
+    $arguments = @("--remote-debugging-port=$Port", '--remote-debugging-address=127.0.0.1')
+    if ($ProfilePath) {
+      $resolvedProfile = [System.IO.Path]::GetFullPath($ProfilePath)
+      New-Item -ItemType Directory -Force -Path $resolvedProfile | Out-Null
+      $arguments += "--user-data-dir=$resolvedProfile"
+    }
+    [void](Start-AutoSkinCodex -Codex $codex -Arguments $arguments)
+    if (-not (Wait-AutoSkinCdp -Port $Port -Seconds 35)) {
+      throw "Codex did not expose its loopback debugging endpoint on port $Port within 35 seconds."
+    }
   }
-  # Windows can auto-respawn a force-killed app moments later; give it a beat and swat once more,
-  # otherwise the unflagged respawn wins the single-instance lock and the debug flag is silently lost.
-  Start-Sleep -Milliseconds 900
-  Get-Process ChatGPT -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-  Start-Sleep -Milliseconds 300
-}
 
-$node = (Get-Command node -ErrorAction Stop).Source
-$debugReady = Test-CodexDebugPort $Port
-$mainProcesses = @(Get-Process ChatGPT -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 })
-
-if (-not $debugReady -and -not $ProfilePath -and $mainProcesses.Count -gt 0) {
-  if (-not $RestartExisting) {
-    throw "Codex is already running without dream-skin debugging on port $Port. Close Codex or rerun with -RestartExisting."
+  if ($previous -and $previous.injectorPid) {
+    $old = Get-Process -Id ([int]$previous.injectorPid) -ErrorAction SilentlyContinue
+    if ($old -and $old.ProcessName -eq 'node') { Stop-Process -Id $old.Id -Force -ErrorAction SilentlyContinue }
   }
-  Stop-CodexCompletely
-}
+  Remove-Item -LiteralPath $PausePath -Force -ErrorAction SilentlyContinue
 
-function Start-CodexWithDebugPort {
-  $package = Get-AppxPackage OpenAI.Codex | Sort-Object Version -Descending | Select-Object -First 1
-  if (-not $package) { throw 'The OpenAI.Codex Store package is not installed.' }
-  $exe = Join-Path $package.InstallLocation 'app\ChatGPT.exe'
-  if (-not (Test-Path -LiteralPath $exe)) { throw "Codex executable not found: $exe" }
-  $arguments = @("--remote-debugging-port=$Port")
-  if ($ProfilePath) {
-    New-Item -ItemType Directory -Force -Path $ProfilePath | Out-Null
-    $arguments += "--user-data-dir=$ProfilePath"
+  if ($ForegroundInjector) {
+    & $node.Path $Injector --watch --port $Port
+    exit $LASTEXITCODE
   }
-  Start-Process -FilePath $exe -ArgumentList $arguments
-}
 
-function Wait-CodexDebugPort([int]$Seconds) {
-  $deadline = (Get-Date).AddSeconds($Seconds)
-  while (-not (Test-CodexDebugPort $Port)) {
-    if ((Get-Date) -ge $deadline) { return $false }
-    Start-Sleep -Milliseconds 400
+  $stdout = Join-Path $StateRoot 'injector.log'
+  $stderr = Join-Path $StateRoot 'injector-error.log'
+  $argumentLine = @((ConvertTo-AutoSkinArgument $Injector), '--watch', '--port', "$Port") -join ' '
+  $daemon = Start-Process -FilePath $node.Path -ArgumentList $argumentLine -WindowStyle Hidden -PassThru `
+    -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+  $state = [ordered]@{
+    schemaVersion = 1; port = $Port; injectorPid = $daemon.Id
+    nodePath = $node.Path; nodeVersion = $node.Version
+    codexExe = $codex.Executable; codexPackageRoot = $codex.PackageRoot
+    codexPackageFullName = $codex.PackageFullName; codexPackageFamilyName = $codex.PackageFamilyName
+    codexVersion = $codex.Version; startedAt = (Get-Date).ToString('o')
+    runtimeRoot = (Split-Path -Parent $PSScriptRoot); profilePath = $ProfilePath
   }
-  return $true
-}
+  Write-AutoSkinJson -Path $StatePath -Value $state
 
-$maxLaunchAttempts = if ($ProfilePath) { 1 } else { 2 }
-$attempt = 0
-while (-not (Test-CodexDebugPort $Port)) {
-  if ($attempt -ge $maxLaunchAttempts) {
-    throw "Codex did not expose CDP on 127.0.0.1/[::1]:$Port after $attempt launch attempt(s)."
+  $verified = $false
+  for ($attempt = 0; $attempt -lt 40; $attempt++) {
+    Start-Sleep -Milliseconds 500
+    & $node.Path $Injector --verify --port $Port *> $null
+    if ($LASTEXITCODE -eq 0) { $verified = $true; break }
+    if ($daemon.HasExited) { break }
   }
-  $attempt++
-  Start-CodexWithDebugPort
-  if (Wait-CodexDebugPort 30) { break }
-  if ($ProfilePath) { throw "Codex did not expose CDP on 127.0.0.1/[::1]:$Port within 30 seconds." }
-  # Likely lost the single-instance race to an unflagged auto-respawn; clear everything and retry once.
-  Stop-CodexCompletely
+  if (-not $verified) {
+    Stop-Process -Id $daemon.Id -Force -ErrorAction SilentlyContinue
+    throw "AutoSkin launched but verification failed. Inspect $stderr"
+  }
+  Write-Host "AutoSkin is active on loopback port $Port."
+} finally {
+  Exit-AutoSkinLock $operation
 }
-
-if (Test-Path -LiteralPath $StatePath) {
-  try {
-    $old = Get-Content -LiteralPath $StatePath -Raw | ConvertFrom-Json
-    if ($old.injectorPid) { Stop-Process -Id ([int]$old.injectorPid) -Force -ErrorAction SilentlyContinue }
-  } catch {}
-}
-
-if ($ForegroundInjector) {
-  & $node $Injector --watch --port $Port
-  exit $LASTEXITCODE
-}
-
-$injectorArgs = @("`"$Injector`"", '--watch', '--port', "$Port")
-$daemon = Start-Process -FilePath $node -ArgumentList $injectorArgs -WindowStyle Hidden -PassThru -RedirectStandardOutput $StdoutPath -RedirectStandardError $StderrPath
-@{
-  port = $Port
-  injectorPid = $daemon.Id
-  startedAt = (Get-Date).ToString('o')
-  skillRoot = $SkillRoot
-  profilePath = $ProfilePath
-} | ConvertTo-Json | Set-Content -LiteralPath $StatePath -Encoding utf8
-
-$verified = $false
-for ($attempt = 0; $attempt -lt 45; $attempt++) {
-  Start-Sleep -Milliseconds 700
-  & $node $Injector --verify --port $Port *> $null
-  if ($LASTEXITCODE -eq 0) { $verified = $true; break }
-}
-if (-not $verified) { throw 'Dream skin launched but verification failed. See injector logs.' }
-Write-Host "Codex Dream Skin is active on port $Port."

@@ -8,7 +8,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.9-3.10 remain supported by the theme tools.
+    tomllib = None
 import unittest
 from pathlib import Path
 
@@ -105,6 +108,8 @@ class ThemeValidationTests(unittest.TestCase):
         self.assertTrue(any("{{project}} exactly once" in error for error in result.errors), result.errors)
 
     def test_native_theme_replaces_inline_chrome_theme_without_duplicate_key(self) -> None:
+        if tomllib is None:
+            self.skipTest("stdlib tomllib is available on Python 3.11+")
         source = """[desktop]
 appearanceTheme = "dark"
 appearanceLightChromeTheme = { accent = "#123456", surface = "#FFFFFF" }

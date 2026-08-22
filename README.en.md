@@ -5,7 +5,7 @@
 [中文说明](README.md) · [Preview](#preview) · [Install](#install) ·
 [Support](SUPPORT.md) · [Issues](https://github.com/Jiaranbb/autoskin-codex/issues)
 
-AutoSkin Codex is a standalone macOS menu-bar app for installing, switching, pausing, recovering,
+AutoSkin Codex is a standalone macOS menu-bar and Windows system-tray app for installing, switching, pausing, recovering,
 and verifying Codex desktop themes. It rebuilds the theme schema, preview workflow, and installer
 around the safe local renderer-injection approach established by
 [`Finderchangchang/codex-autoskin`](https://github.com/Finderchangchang/codex-autoskin).
@@ -29,6 +29,27 @@ newly generated themes are installed into durable `themes-private/` storage.
 The sidebar labels in this real installed screenshot have been obscured. They are not bundled data.
 
 ## Install
+
+### Windows native tray app
+
+Windows users do not run a PowerShell installer. Publish the app, keep `AutoSkin.exe` beside its
+`AutoSkinRuntime` directory, and double-click it:
+
+```powershell
+dotnet publish app\windows\AutoSkin.Windows.csproj -c Release -r win-x64 --self-contained `
+  -p:PublishSingleFile=true -o dist\AutoSkin-win-x64
+```
+
+On first launch it validates Codex, Node.js, and Python, self-installs below
+`%LOCALAPPDATA%\CodexAutoSkin\app`, installs the replaceable runtime and starter theme, applies
+AutoSkin, and registers the installed copy for login. The tray menu matches macOS: Themes,
+Original Codex Skin, Open Theme Folder, and Quit AutoSkin. It does not modify `WindowsApps` or
+`app.asar`.
+
+First launch also creates an `AutoSkin Codex` Start Menu shortcut so Windows Search can discover the
+installed app. Theme metadata from Node is decoded explicitly as UTF-8.
+
+### macOS menu-bar app
 
 Build and install the standalone macOS app:
 
@@ -80,9 +101,9 @@ AutoSkin Codex does not modify, replace, re-sign, or unpack the official Codex/C
 The runtime connects only to a loopback Chromium debugging endpoint. Authored themes reject remote
 images, embedded Base64 payloads, path traversal, JavaScript URLs, and unscoped custom CSS.
 
-macOS is locally tested. Windows scripts are included but still require broader device testing.
-Python 3.9+ is required; macOS normally reuses the desktop app's bundled Node.js and does not
-require Homebrew or SwiftBar.
+macOS is locally tested. Windows now uses a native WinForms tray app rather than a PowerShell
+installation flow. Python 3.9+ is required; Windows also requires Node.js 22+, while macOS normally
+reuses the desktop app's bundled Node.js and does not require Homebrew or SwiftBar.
 
 ## Fan Art notice
 

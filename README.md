@@ -3,9 +3,10 @@
 **独立的 Codex 桌面皮肤管理 App：从主题制作、多界面预览到安全安装与恢复。**
 
 [![macOS App](https://img.shields.io/badge/macOS-AutoSkin.app-16ABC4)](#30-秒开始)
+[![Windows App](https://img.shields.io/badge/Windows-AutoSkin.exe-16ABC4)](#windows-原生托盘-app)
 [![Optional Skill](https://img.shields.io/badge/Codex-Skill%20adapter-6A8790)](#可选skill-适配层)
 [![macOS tested](https://img.shields.io/badge/macOS-tested-16ABC4)](#支持的平台与依赖)
-[![Windows scripts](https://img.shields.io/badge/Windows-scripts%20included-6A8790)](#支持的平台与依赖)
+[![Windows tested](https://img.shields.io/badge/Windows-native%20tray-tested-16ABC4)](#支持的平台与依赖)
 [![Publisher](https://img.shields.io/badge/publisher-Jiaranbb-F08FA9)](https://github.com/Jiaranbb)
 
 [English](README.en.md) · [30 秒开始](#30-秒开始) · [效果预览](#效果预览) ·
@@ -14,7 +15,7 @@
 
 发布者：[Jiaranbb](https://github.com/Jiaranbb)
 
-AutoSkin Codex 是一个独立的 macOS 菜单栏 App，负责安装、切换、暂停、恢复和验证 Codex
+AutoSkin Codex 是一个独立的 macOS 菜单栏／Windows 系统托盘 App，负责安装、切换、暂停、恢复和验证 Codex
 桌面皮肤。项目基于
 [`Finderchangchang/codex-autoskin`](https://github.com/Finderchangchang/codex-autoskin)
 的安全换肤思路进行了重构和优化：重新设计主题 schema、预览器和安装流程，把图片素材、
@@ -57,7 +58,30 @@ AutoSkin Codex 对实际界面中的多个部位提供深度个性化订制。�
 
 ## 30 秒开始
 
-### 推荐：安装独立 macOS App
+### Windows 原生托盘 App
+
+Windows 用户不需要运行 PowerShell 安装命令。构建发布包后，直接双击输出目录中的
+`AutoSkin.exe`：程序会在首次启动时检查 Codex、Node.js 与 Python，安装或更新独立运行时，
+内置 Chiikawa Summer 主题，并把自身安装到 `%LOCALAPPDATA%\CodexAutoSkin\app`，随后在系统
+托盘显示调色盘图标。
+
+首次启动还会创建开始菜单中的 `AutoSkin Codex` 快捷方式，可直接用 Windows 搜索启动；主题
+列表与 Node 子进程输出统一按 UTF-8 读取，中文主题名不会受系统代码页影响。
+
+```powershell
+dotnet publish app\windows\AutoSkin.Windows.csproj -c Release -r win-x64 --self-contained `
+  -p:PublishSingleFile=true -o dist\AutoSkin-win-x64
+```
+
+托盘菜单与 macOS 保持一致：`Themes` 下可选择 `Original Codex Skin` 或任意已安装主题，另有
+`Open Theme Folder` 和 `Quit AutoSkin`。应用会随 Windows 登录启动；主题和运行时位于
+`%LOCALAPPDATA%\CodexAutoSkin`，源码目录移动或删除后仍可使用。它不会修改 `WindowsApps`
+或 `app.asar`。
+
+Windows 托盘菜单使用 Win11 风格的浅／深色自适应、圆角、现代间距、悬停层和强调色勾选，
+不使用 WinForms 默认的经典菜单外观。
+
+### macOS 菜单栏 App
 
 ```bash
 bash scripts/build-macos-app.sh
@@ -196,7 +220,7 @@ CSS，而不是重新维护一整份手写皮肤。
 | 平台 | 当前状态 | 基础要求 |
 |---|---|---|
 | macOS | 已执行本地安装、切换、恢复和卸载回归测试 | Codex 或 ChatGPT 桌面 App、Python 3.9+；通常复用 App 自带 Node.js |
-| Windows | 已包含 PowerShell 安装、启动、验证和恢复脚本，公开发布前仍需 Windows 真机复测 | Codex 桌面 App、PowerShell、可用的 Node.js |
+| Windows | 原生 WinForms 托盘 App；已完成 Windows 构建与离线运行时回归 | Microsoft Store Codex、Windows 10/11、Node.js 22+、Python 3.9+ |
 
 macOS 不要求安装 Homebrew 或 SwiftBar。原生菜单栏控制器属于可选功能；只有在需要构建它时
 才需要系统可用的 Swift 编译工具。
@@ -311,7 +335,7 @@ Chat 首页、一个有内容的会话、Settings、Plugins、Sites 和 Schedule
 - Codex 桌面 App 的 DOM 和窗口结构可能随更新改变；更新后应重新运行 `doctor` 和 `verify`。
 - 预览器可以提前暴露多数布局问题，但真实字体、系统缩放和新版界面仍可能产生细微差异。
 - 全屏、Banner 和新建对话使用不同的裁切与透明度；一张预览不能代表所有界面。
-- Windows 脚本在公开发布前仍需要真机复测，因此当前不应把 Windows 标记为与 macOS 同等验证。
+- Windows 托盘 App 不依赖 PowerShell 安装；PowerShell 文件仅作为可选的自动化／兼容入口保留。
 - 角色图、透明徽章和低对比度背景需要人工视觉确认，自动验证不能代替最终审美判断。
 
 ## FAQ
@@ -330,7 +354,7 @@ Chat 首页、一个有内容的会话、Settings、Plugins、Sites 和 Schedule
 **必须安装 Homebrew、SwiftBar 或额外 Node.js 吗？**
 
 macOS 通常可以复用 Codex App 自带的 Node.js，因此不要求 Homebrew 或 SwiftBar。Python 3.9+
-仍用于主题生成与校验。Windows 当前需要系统能够找到 Node.js。
+仍用于主题生成与校验。Windows 托盘 App 需要系统能够找到 Node.js 22+ 和 Python 3.9+。
 
 **为什么要先预览，不能直接安装吗？**
 

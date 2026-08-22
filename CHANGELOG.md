@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add a native Windows WinForms tray app with the same Themes / Original Skin / Open Folder / Quit menu as macOS.
+- Render the Windows tray menu with Windows 11 spacing, rounded-corner hints, system light/dark colors,
+  Segoe UI Variable, modern hover states, separators, arrows, and accent checkmarks.
+- Make first-run Windows runtime installation, update, login startup, theme switching, pause, and recovery GUI-driven rather than PowerShell-driven.
+- Install the Windows runtime outside the source checkout and preserve `themes-private/` across updates.
+- Validate the Store Codex package, Node.js 22+, loopback CDP endpoint, managed paths, and live renderer before reporting success.
 - Promote AutoSkin to a standalone macOS menu-bar app with an optional Skill adapter.
 - Detect, install, update, and apply the runtime automatically when the app opens.
 - Enumerate installed themes in the menu bar and switch themes without a command-line workflow.

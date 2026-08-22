@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>AutoSkin</AssemblyName>
+    <RootNamespace>AutoSkin.Windows</RootNamespace>
+    <AssemblyTitle>AutoSkin Codex</AssemblyTitle>
+    <Product>AutoSkin Codex</Product>
+    <Description>Native Windows tray theme manager for Codex</Description>
+    <Company>AutoSkin Codex</Company>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="..\..\skill\**\*"
+             Exclude="..\..\skill\**\.build\**;..\..\skill\**\__pycache__\**;..\..\skill\**\*.pyc">
+      <Link>AutoSkinRuntime\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

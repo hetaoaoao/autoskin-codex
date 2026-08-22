@@ -21,6 +21,7 @@ if (-not (Test-Path -LiteralPath $StateRoot) -and (Test-Path -LiteralPath $Legac
   }
 }
 $StatePath = Join-Path $StateRoot 'state.json'
+$PausePath = Join-Path $StateRoot 'paused'
 $WatcherStatePath = Join-Path $StateRoot 'watcher-state.json'
 $LogPath = Join-Path $StateRoot 'watcher.log'
 $StartScript = Join-Path $PSScriptRoot 'start-dream-skin.ps1'
@@ -75,6 +76,12 @@ $restartTimes = New-Object System.Collections.Generic.List[datetime]
 
 try {
   while ($true) {
+    if (Test-Path -LiteralPath $PausePath) {
+      $consecutiveFailures = 0
+      $missedProbes = 0
+      Start-Sleep -Seconds ([Math]::Max(1, $PollSeconds))
+      continue
+    }
     $debugReady = Test-DreamDebugPort
     if ($debugReady) { $missedProbes = 0 }
 

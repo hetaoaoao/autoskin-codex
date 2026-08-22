@@ -66,8 +66,10 @@ python3 scripts/adopt-runtime-macos.py
 This refreshes only `CodexAutoSkin/runtime/` and its `sourceRoot`. It preserves
 `themes-private/`, the selected theme, the paused marker, the LaunchAgent, and `~/.codex/config.toml`.
 
-On Windows, use the bundled PowerShell scripts. Run PowerShell with an execution policy suitable
-for locally reviewed scripts; do not patch the installed application.
+On Windows, use the native WinForms tray app under `app/windows`. Its first launch performs the
+runtime copy, starter-theme build, Store-package validation, login registration, and apply flow.
+PowerShell scripts are optional automation interfaces, not the end-user installer. Neither path
+patches the installed application.
 
 ## 4. Theme install transaction
 

@@ -142,6 +142,8 @@ def remove_desktop_scalars(text: str, keys: set[str]) -> str:
 def native_theme_block(native: dict[str, Any]) -> str:
     mode = native["appearance"].capitalize()
     key = f"desktop.appearance{mode}ChromeTheme"
+    code_font = "Cascadia Mono" if os.name == "nt" else "SFMono-Regular"
+    ui_font = "Segoe UI" if os.name == "nt" else "SF Pro Text"
     return (
         f"\n[{key}]\n"
         f"accent = {toml_quote(native['accent'])}\n"
@@ -150,8 +152,8 @@ def native_theme_block(native: dict[str, Any]) -> str:
         f"opaqueWindows = {'true' if native['opaqueWindows'] else 'false'}\n"
         f"surface = {toml_quote(native['surface'])}\n"
         f"\n[{key}.fonts]\n"
-        'code = "SFMono-Regular"\n'
-        'ui = "SF Pro Text"\n'
+        f'code = {toml_quote(code_font)}\n'
+        f'ui = {toml_quote(ui_font)}\n'
         f"\n[{key}.semanticColors]\n"
         f"diffAdded = {toml_quote('#00A240')}\n"
         f"diffRemoved = {toml_quote('#E02E2A')}\n"

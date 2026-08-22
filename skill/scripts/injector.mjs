@@ -118,6 +118,18 @@ function isMainRendererTarget(target) {
   }
 }
 
+function hasSafeDebuggerUrl(target, port) {
+  try {
+    const url = new URL(target.webSocketDebuggerUrl);
+    return url.protocol === "ws:" && Number(url.port) === port &&
+      ["127.0.0.1", "localhost", "[::1]", "::1"].includes(url.hostname.toLowerCase()) &&
+      !url.username && !url.password && !url.search && !url.hash &&
+      /^\/devtools\/(?:page|browser)\/[A-Za-z0-9._-]+$/.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
 // Chromium binds the DevTools server to a single loopback address, and which
 // stack it picks can change between boots (observed: 127.0.0.1 before a reboot,
 // [::1] after). Probe both and stick with whichever answers.
@@ -134,8 +146,9 @@ async function fetchTargets(port) {
       const response = await fetch(`http://${host}:${port}/json/list`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const targets = await response.json();
+      if (!Array.isArray(targets)) throw new Error("CDP target list is not an array");
       preferredHost = host;
-      return targets;
+      return targets.filter((target) => hasSafeDebuggerUrl(target, port));
     } catch (error) {
       lastError = error;
     }
@@ -174,7 +187,14 @@ async function waitForTargets(port, timeoutMs, { includeAuxiliary = false } = {}
 // See THEME-SPEC.md for the authoring contract.
 // ---------------------------------------------------------------------------
 
-const THEME_DIRS = ["themes", "themes-private"];
+// Installed Windows/macOS runtimes are replaceable, while user themes live
+// next to the runtime in durable storage. Keep the source-checkout layout as a
+// fallback for contributors running the injector in place.
+const THEME_DIRS = [
+  { label: "themes", directory: path.join(root, "themes") },
+  { label: "themes-private", directory: path.join(root, "themes-private") },
+  { label: "../themes-private", directory: path.join(root, "..", "themes-private") },
+];
 const DEFAULT_LAYOUT = "fullscreen";
 const THEME_NAME_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const TOKEN_KEY_PATTERN = /^--dream-[a-z0-9-]+$/;
@@ -465,8 +485,9 @@ function validateTokens(name, tokens) {
   return { errors };
 }
 
-async function loadThemeDir(baseName, dirName) {
-  const dir = path.join(root, baseName, dirName);
+async function loadThemeDir(themeRoot, dirName) {
+  const { label, directory } = themeRoot;
+  const dir = path.join(directory, dirName);
   const manifestPath = path.join(dir, "theme.json");
   let raw;
   try {
@@ -520,7 +541,7 @@ async function loadThemeDir(baseName, dirName) {
       const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? "image/png";
       artUrls[role] = `data:${mime};base64,${buffer.toString("base64")}`;
     } catch {
-      warn(`theme "${name}" skipped: art file not found: ${path.join(baseName, dirName, file)}`);
+      warn(`theme "${name}" skipped: art file not found: ${path.join(label, dirName, file)}`);
       return null;
     }
   }
@@ -538,7 +559,7 @@ async function loadThemeDir(baseName, dirName) {
   }
   return {
     name,
-    source: baseName,
+    source: label,
     order: Number.isFinite(config.order) ? config.order : 100,
     isDefault: config.default === true,
     meta: {
@@ -559,18 +580,18 @@ async function loadThemeDir(baseName, dirName) {
 
 async function loadThemes() {
   const themes = [];
-  for (const baseName of THEME_DIRS) {
+  for (const themeRoot of THEME_DIRS) {
     let entries = [];
     try {
-      entries = await fs.readdir(path.join(root, baseName), { withFileTypes: true });
+      entries = await fs.readdir(themeRoot.directory, { withFileTypes: true });
     } catch {
       continue;
     }
     for (const entry of entries.filter((item) => item.isDirectory()).sort((a, b) => a.name.localeCompare(b.name, "en"))) {
-      const theme = await loadThemeDir(baseName, entry.name);
+      const theme = await loadThemeDir(themeRoot, entry.name);
       if (!theme) continue;
       if (themes.some((existing) => existing.name === theme.name)) {
-        warn(`theme "${theme.name}" in ${baseName}/ skipped: a theme with the same name was already loaded`);
+        warn(`theme "${theme.name}" in ${themeRoot.label}/ skipped: a theme with the same name was already loaded`);
         continue;
       }
       themes.push(theme);
