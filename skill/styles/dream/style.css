@@ -315,14 +315,16 @@ html.codex-dream-skin .dream-main-surface > header.app-header-tint {
   position: fixed;
   z-index: 31;
   pointer-events: none;
-  overflow: hidden;
+  /* Clip like overflow:hidden, but let the brand row extend up into a
+     titlebar that sits outside the main surface (--dream-titlebar-lift). */
+  clip-path: inset(calc(-1 * var(--dream-titlebar-lift, 0px)) 0 0 0 round 20px 0 0 0);
   border-radius: 20px 0 0 0;
 }
 
 .dream-brand {
   position: absolute;
   left: 25px;
-  top: 3px;
+  top: calc(3px - var(--dream-titlebar-lift, 0px));
   height: 40px;
   display: none;
   align-items: center;
@@ -339,7 +341,7 @@ html.codex-dream-skin .dream-main-surface > header.app-header-tint {
 .dream-signature {
   position: absolute;
   right: 92px;
-  top: 6px;
+  top: calc(6px - var(--dream-titlebar-lift, 0px));
   display: none;
   color: #ef73b8;
   font: italic 20px/1.2 "Segoe Script", "Comic Sans MS", cursive;
@@ -694,14 +696,14 @@ html.codex-dream-skin .dream-chat-home > * {
   justify-content: flex-start !important;
 }
 
-.dream-home > .dream-home-content > div:first-child {
+.dream-home .dream-home-hero-frame {
   flex: 0 0 calc(var(--dream-hero-height) + var(--dream-suggestion-gap) + var(--dream-card-height) + 8px) !important;
   min-height: calc(var(--dream-hero-height) + var(--dream-suggestion-gap) + var(--dream-card-height) + 8px) !important;
   align-items: flex-start !important;
   padding-bottom: 0 !important;
 }
 
-.dream-home > .dream-home-content > div:nth-child(2) {
+.dream-home .dream-home-dock {
   flex: 0 0 auto !important;
   min-height: 0 !important;
   justify-content: flex-start !important;
@@ -710,12 +712,12 @@ html.codex-dream-skin .dream-chat-home > * {
   padding-bottom: 0 !important;
 }
 
-.dream-home > .dream-home-content > div:nth-child(2) > div:last-child {
+.dream-home .dream-home-dock-body {
   padding-top: 0 !important;
   padding-bottom: 18px !important;
 }
 
-.dream-home > .dream-home-content > div:first-child > div:first-child {
+.dream-home .dream-home-hero {
   position: relative !important;
   isolation: isolate;
   width: calc(100% - 44px) !important;
@@ -736,7 +738,7 @@ html.codex-dream-skin .dream-chat-home > * {
   box-shadow: 0 14px 34px rgba(150,60,151,.20), inset 0 0 0 4px rgba(255,255,255,.20) !important;
 }
 
-.dream-home > .dream-home-content > div:first-child > div:first-child::before {
+.dream-home .dream-home-hero::before {
   content: "";
   position: absolute;
   z-index: 0;
@@ -747,7 +749,7 @@ html.codex-dream-skin .dream-chat-home > * {
   background: var(--dream-hero-overlay);
 }
 
-.dream-home > .dream-home-content > div:first-child > div:first-child > div:first-child {
+.dream-home .dream-home-copy {
   position: relative;
   z-index: 1;
   height: 100%;
@@ -756,7 +758,7 @@ html.codex-dream-skin .dream-chat-home > * {
   padding-left: 38px;
 }
 
-.dream-home > .dream-home-content > div:first-child > div:first-child > div:first-child > div:first-child {
+.dream-home .dream-home-copy-body {
   width: var(--dream-hero-copy-width) !important;
   align-items: flex-start !important;
   gap: 0 !important;
@@ -809,7 +811,7 @@ html.codex-dream-skin .dream-chat-home > * {
   content: none;
 }
 
-.dream-home > .dream-home-content > div:first-child > div:first-child > div:nth-child(2) {
+.dream-home .dream-home-cards {
   left: 14px !important;
   right: 14px !important;
   top: 100% !important;
@@ -985,12 +987,12 @@ html.dream-layout-banner .dream-home > .dream-home-content {
   justify-content: space-between !important;
 }
 
-html.dream-layout-banner .dream-home > .dream-home-content > div:first-child {
+html.dream-layout-banner .dream-home .dream-home-hero-frame {
   flex: 0 0 var(--dream-hero-height) !important;
   min-height: var(--dream-hero-height) !important;
 }
 
-html.dream-layout-banner .dream-home > .dream-home-content > div:nth-child(2) {
+html.dream-layout-banner .dream-home .dream-home-dock {
   position: relative !important;
   z-index: 5;
   flex: 1 0 0 !important;
@@ -999,12 +1001,12 @@ html.dream-layout-banner .dream-home > .dream-home-content > div:nth-child(2) {
   margin-top: 0 !important;
 }
 
-html.dream-layout-banner .dream-home > .dream-home-content > div:nth-child(2) > div:last-child {
+html.dream-layout-banner .dream-home .dream-home-dock-body {
   padding-top: 3px !important;
   padding-bottom: 4px !important;
 }
 
-html.dream-layout-banner .dream-home > .dream-home-content > div:first-child > div:first-child > div:nth-child(2) {
+html.dream-layout-banner .dream-home .dream-home-cards {
   top: calc(100% + clamp(74px, 16cqh, 164px)) !important;
   margin-top: 0 !important;
   z-index: 4;
@@ -1027,7 +1029,7 @@ html.dream-layout-fullscreen .dream-home > .dream-home-content {
   padding: 0 !important;
 }
 
-html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child {
+html.dream-layout-fullscreen .dream-home .dream-home-hero-frame {
   position: absolute !important;
   inset: 0 !important;
   z-index: 0;
@@ -1038,7 +1040,7 @@ html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child
   padding: 0 !important;
 }
 
-html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child > div:first-child {
+html.dream-layout-fullscreen .dream-home .dream-home-hero {
   position: absolute !important;
   inset: 14px 16px 16px !important;
   width: auto !important;
@@ -1052,7 +1054,7 @@ html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child
   box-shadow: 0 18px 42px rgba(72, 20, 91, .34), inset 0 0 0 4px rgba(255, 255, 255, .18) !important;
 }
 
-html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child > div:first-child::before {
+html.dream-layout-fullscreen .dream-home .dream-home-hero::before {
   /* Width 100% + a radial/vertical gradient in --dream-fullscreen-overlay turns
      this into the "scene" preset for full-canvas art (see THEME-SPEC.md §5.1). */
   width: var(--dream-fullscreen-overlay-width);
@@ -1060,7 +1062,7 @@ html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child
   background: var(--dream-fullscreen-overlay);
 }
 
-html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child > div:first-child::after {
+html.dream-layout-fullscreen .dream-home .dream-home-hero::after {
   content: "";
   position: absolute;
   z-index: 0;
@@ -1070,15 +1072,15 @@ html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child
   background: var(--dream-fullscreen-wash);
 }
 
-html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child > div:first-child > div:first-child {
+html.dream-layout-fullscreen .dream-home .dream-home-copy {
   height: auto !important;
   inset: 0 !important;
   align-items: flex-start !important;
   padding: clamp(72px, 13cqh, 122px) 0 0 clamp(32px, 4.6cqw, 72px) !important;
 }
 
-html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child > div:first-child > div:first-child > div:first-child {
-  width: min(48%, 640px) !important;
+html.dream-layout-fullscreen .dream-home .dream-home-copy-body {
+  width: min(56%, 760px) !important;
 }
 
 html.dream-layout-fullscreen .dream-home .dream-hero-source {
@@ -1090,7 +1092,7 @@ html.dream-layout-fullscreen .dream-home .dream-hero-source::after {
   font-size: clamp(14px, 1.2vw, 18px);
 }
 
-html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child > div:first-child > div:nth-child(2) {
+html.dream-layout-fullscreen .dream-home .dream-home-cards {
   left: clamp(18px, 2.2cqw, 34px) !important;
   right: clamp(18px, 2.2cqw, 34px) !important;
   top: 49% !important;
@@ -1107,7 +1109,7 @@ html.dream-layout-fullscreen .dream-home .dream-suggestions button {
   backdrop-filter: blur(15px);
 }
 
-html.dream-layout-fullscreen .dream-home > .dream-home-content > div:nth-child(2) {
+html.dream-layout-fullscreen .dream-home .dream-home-dock {
   position: absolute !important;
   left: 0 !important;
   right: 0 !important;
@@ -1120,7 +1122,7 @@ html.dream-layout-fullscreen .dream-home > .dream-home-content > div:nth-child(2
   padding: 0 !important;
 }
 
-html.dream-layout-fullscreen .dream-home > .dream-home-content > div:nth-child(2) > div:last-child {
+html.dream-layout-fullscreen .dream-home .dream-home-dock-body {
   padding-top: 0 !important;
   padding-bottom: 16px !important;
 }
@@ -1238,7 +1240,7 @@ html.codex-dream-skin [data-message-author-role] {
   .dream-ribbon { bottom: 70px; font-size: 25px; }
   #codex-dream-skin-chrome.dream-home-shell .dream-brand { display: none; }
   .dream-home { --thread-content-max-width: min(860px, calc(100cqw - 30px)) !important; }
-  .dream-home > .dream-home-content > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
+  .dream-home .dream-home-hero { width: calc(100% - 28px) !important; }
 }
 
 @media (max-width: 900px) {
@@ -1251,7 +1253,7 @@ html.codex-dream-skin [data-message-author-role] {
     --dream-suggestion-gap: 11px;
     --dream-hero-copy-width: 66%;
   }
-  .dream-home > .dream-home-content > div:first-child > div:first-child > div:first-child { padding-left: 26px; }
+  .dream-home .dream-home-copy { padding-left: 26px; }
   .dream-home .dream-hero-source { font-size: 18px !important; }
   .dream-home .dream-hero-source::after { font-size: 12px; margin-top: 10px; }
   .dream-home .dream-suggestions button { font-size: 12px !important; padding-bottom: 16px !important; }
@@ -1259,19 +1261,19 @@ html.codex-dream-skin [data-message-author-role] {
   .dream-home .dream-suggestions button > span:last-child::after { content: none; }
   .dream-home .dream-suggestions button > span:first-child::before { content: none; }
   .dream-home .dream-suggestions button > span:first-child > span:first-child { width: 38px; height: 38px; }
-  html.dream-layout-banner .dream-home > .dream-home-content > div:first-child > div:first-child > div:nth-child(2) {
+  html.dream-layout-banner .dream-home .dream-home-cards {
     top: calc(100% + clamp(58px, 12cqh, 94px)) !important;
   }
-  html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child > div:first-child {
+  html.dream-layout-fullscreen .dream-home .dream-home-hero {
     inset: 10px 10px 12px !important;
   }
-  html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child > div:first-child > div:first-child {
+  html.dream-layout-fullscreen .dream-home .dream-home-copy {
     padding: 64px 0 0 26px !important;
   }
-  html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child > div:first-child > div:first-child > div:first-child {
+  html.dream-layout-fullscreen .dream-home .dream-home-copy-body {
     width: 66% !important;
   }
-  html.dream-layout-fullscreen .dream-home > .dream-home-content > div:first-child > div:first-child > div:nth-child(2) {
+  html.dream-layout-fullscreen .dream-home .dream-home-cards {
     top: 43% !important;
   }
 }

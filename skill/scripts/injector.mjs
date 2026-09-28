@@ -716,7 +716,6 @@ async function verifySession(session) {
     const chatHome = firstVisible('.dream-chat-home');
     const home = workHome || chatHome;
     const homeKind = workHome ? 'work' : chatHome ? 'chat' : null;
-    const homeContent = workHome?.querySelector(':scope > .dream-home-content') ?? null;
     const heroSource = workHome ? firstVisible('.dream-hero-source', workHome) : null;
     const suggestions = workHome ? firstVisible('.dream-suggestions', workHome) : null;
     const cards = suggestions
@@ -742,7 +741,7 @@ async function verifySession(session) {
       homeKind,
       surfaceKind,
       suggestionsPresent: Boolean(suggestions),
-      hero: box(heroSource || homeContent?.firstElementChild?.firstElementChild),
+      hero: box(heroSource || (workHome ? firstVisible(".dream-home-hero", workHome) : null)),
       chatCanvas: chatHome ? getComputedStyle(chatHome, '::before').backgroundImage : null,
       cards,
       composer: box(composer),

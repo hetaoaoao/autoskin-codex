@@ -11,7 +11,7 @@
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
   const USAGE_STORAGE_KEY = "codex-dream-skin.usage-percent";
   const USAGE_RESET_STORAGE_KEY = "codex-dream-skin.usage-reset-at";
-  const STYLE_VERSION = "29";
+  const STYLE_VERSION = "32";
   const ADAPTER_VERSION = "semantic-3";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
@@ -514,6 +514,51 @@
     return markSingleton("dream-hero-source", hero);
   };
 
+  // Codex rewraps the Work home between releases (26.9 added a hidden thread
+  // scroller as the first child and a `display: contents` layer around the
+  // hero and composer), so positional `> div:first-child` selectors drift onto
+  // the wrong nodes. Mark each layout slot by what it contains instead: the
+  // frame/dock are the children of the hero+composer common ancestor, and the
+  // hero box is the nearest ancestor that holds both the title and the cards.
+  const HOME_PART_MARKERS = [
+    "dream-home-hero-frame", "dream-home-hero", "dream-home-copy",
+    "dream-home-copy-body", "dream-home-cards", "dream-home-dock", "dream-home-dock-body",
+  ];
+  const childToward = (ancestor, node) => {
+    let child = node;
+    while (child && child.parentElement !== ancestor) child = child.parentElement;
+    return child ?? null;
+  };
+  const resolveHomeParts = (home, heroSource, suggestions, composer) => {
+    const parts = {};
+    const layout = home && heroSource && composer ? commonAncestor([heroSource, composer], home) : null;
+    if (layout && layout !== heroSource && layout !== composer) {
+      const frame = childToward(layout, heroSource);
+      const dock = childToward(layout, composer);
+      if (frame && dock && frame !== dock) {
+        parts["dream-home-hero-frame"] = frame;
+        parts["dream-home-dock"] = dock;
+        parts["dream-home-dock-body"] = dock === composer ? null : childToward(dock, composer);
+        // The native suggestions section may be empty (zero height) when no
+        // cards are offered; it still anchors the hero box structurally.
+        const cardsAnchor = suggestions ?? home.querySelector('[class*="home-suggestions"]');
+        const heroBox = cardsAnchor && frame.contains(cardsAnchor)
+          ? commonAncestor([heroSource, cardsAnchor], frame)
+          : frame.firstElementChild;
+        if (heroBox && heroBox !== heroSource && heroBox.contains(heroSource)) {
+          parts["dream-home-hero"] = heroBox;
+          const copy = childToward(heroBox, heroSource);
+          parts["dream-home-copy"] = copy;
+          parts["dream-home-copy-body"] = copy && copy !== heroSource ? childToward(copy, heroSource) : null;
+          const cards = cardsAnchor && heroBox.contains(cardsAnchor) ? childToward(heroBox, cardsAnchor) : null;
+          parts["dream-home-cards"] = cards !== copy ? cards : null;
+        }
+      }
+    }
+    adapterState.signals.homeParts = HOME_PART_MARKERS.filter((marker) => parts[marker]).length;
+    for (const marker of HOME_PART_MARKERS) markSingleton(marker, parts[marker] ?? null);
+  };
+
   // Composer class names changed from the stable `composer-surface-chrome`
   // marker to generated module names in Codex 26.8. Find the visible editor
   // semantically, then choose its nearest rounded visual surface. The marker
@@ -651,6 +696,7 @@
     // Remove the retired inline bar when upgrading a live renderer from 3.3.x.
     document.querySelectorAll(".dream-usage-gauge").forEach((node) => node.remove());
     syncUsageOrb(composer);
+    resolveHomeParts(workHome, heroSource, suggestions, workHome ? composer : null);
     const surfaceKind = workHome ? "work-home" : chatHome ? "chat-home" :
       composer ? "conversation" : "utility";
     adapterState.signals.surface = surfaceKind;
@@ -724,6 +770,17 @@
     chrome.style.top = `${Math.round(shellBox.top)}px`;
     chrome.style.width = `${Math.round(shellBox.width)}px`;
     chrome.style.height = `${Math.round(shellBox.height)}px`;
+    // Codex 26.9 moved the titlebar out of <main> into a fixed full-width
+    // header, so the brand/signature (designed to sit in that strip) would
+    // drop onto the art. Lift them by the titlebar height directly above us.
+    const titlebar = [...document.querySelectorAll("header")].find((header) => {
+      if (shellMain.contains(header) || getComputedStyle(header).position !== "fixed") return false;
+      const box = header.getBoundingClientRect();
+      return box.height > 0 && Math.abs(box.bottom - shellBox.top) <= 4 &&
+        box.left <= shellBox.left + 1 && box.right >= shellBox.right - 1;
+    });
+    const titlebarLift = titlebar ? Math.max(0, Math.round(shellBox.top - titlebar.getBoundingClientRect().top)) : 0;
+    chrome.style.setProperty("--dream-titlebar-lift", `${titlebarLift}px`);
     document.querySelectorAll(".dream-composer-surface").forEach((candidate) => {
       if (candidate !== composer) candidate.classList.remove("dream-composer-surface");
     });
@@ -759,7 +816,7 @@
     document.querySelectorAll(".dream-new-task").forEach((node) => node.classList.remove("dream-new-task"));
     document.querySelectorAll(".dream-composer-surface").forEach((node) => node.classList.remove("dream-composer-surface"));
     document.querySelectorAll(".dream-usage-orb, .dream-usage-gauge").forEach((node) => node.remove());
-    for (const marker of ["dream-sidebar", "dream-main-surface", "dream-suggestions", "dream-hero-source"]) {
+    for (const marker of ["dream-sidebar", "dream-main-surface", "dream-suggestions", "dream-hero-source", ...HOME_PART_MARKERS]) {
       document.querySelectorAll(`.${marker}`).forEach((node) => node.classList.remove(marker));
     }
     document.getElementById(STYLE_ID)?.remove();
@@ -808,12 +865,12 @@
     },
     get usagePercent() { return usagePercent; },
     get usageResetAt() { return usageResetAt; },
-    version: "3.5.5"
+    version: "3.5.6"
   };
   ensure();
   return {
     installed: true,
-    version: "3.5.5",
+    version: "3.5.6",
     layout: activeLayout,
     theme: activeTheme,
     themes: [...THEME_ORDER],
