@@ -52,12 +52,23 @@ ensure_skin() {
   fi
   local status
   status="$(bash "$INSTALLED_CLI" status 2>/dev/null || true)"
-  if printf '%s\n' "$status" | grep -q '^session=paused$'; then
-    return
-  fi
   if [ "$needs_apply" = true ] || ! printf '%s\n' "$status" | grep -q '^session=active$'; then
     apply_skin
   fi
+}
+
+launch_skin() {
+  # Opening the app means the user wants the skin: clear the paused marker left
+  # by a previous app shutdown, then apply the last selected theme.
+  rm -f "$STATE_ROOT/paused"
+  ensure_skin
+}
+
+shutdown_skin() {
+  # Closing the app means the user wants the original skin. The watcher honors
+  # the paused marker, so it will not re-inject while the app stays closed.
+  [ -x "$INSTALLED_CLI" ] || return 0
+  bash "$INSTALLED_CLI" pause
 }
 
 list_themes() {
@@ -100,6 +111,12 @@ case "$COMMAND" in
     ;;
   ensure)
     ensure_skin
+    ;;
+  launch)
+    launch_skin
+    ;;
+  shutdown)
+    shutdown_skin
     ;;
   themes)
     list_themes
@@ -152,7 +169,7 @@ case "$COMMAND" in
   self-test)
     require_resources
     /usr/bin/python3 "$AUTOSKIN_ROOT/scripts/theme_tool.py" validate "$STARTER_THEME"
-    echo "AutoSkin.app resources are valid."
+    echo "CodexSkin.app resources are valid."
     ;;
   *)
     die "unknown command: $COMMAND"

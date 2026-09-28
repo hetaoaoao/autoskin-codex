@@ -1,0 +1,14 @@
+/* App switcher popup (ChatGPT / Codex) title colors, scoped to this theme. */
+html.dream-theme-chiikawa-summer [role="menu"][data-radix-menu-content] [role="menuitem"] > div > div > span:first-child {
+  color: #7830AE !important;
+  font-weight: 650;
+}
+
+html.dream-theme-chiikawa-summer [role="menu"][data-radix-menu-content] [role="menuitem"] span.text-codex-description {
+  color: #0B6E82 !important;
+}
+
+/* Collapsed topbar app-switcher title ("Codex") — same accent. */
+html.dream-theme-chiikawa-summer button[aria-label^="Switch mode"] span.truncate {
+  color: #7830AE !important;
+}

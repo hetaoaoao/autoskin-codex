@@ -16,7 +16,7 @@ private final class AutoSkinAppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         buildMenu()
-        registerLoginItem()
+        unregisterLoginItem()
         ensureReady()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
             self?.refreshStatus()
@@ -25,18 +25,35 @@ private final class AutoSkinAppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         refreshTimer?.invalidate()
+        // The skin is tied to the app lifecycle: shutting the app down must
+        // return Codex to the original skin. Run synchronously because the
+        // process exits right after this callback returns.
+        let pause = Process()
+        pause.executableURL = URL(fileURLWithPath: "/bin/bash")
+        pause.arguments = [commandScript.path, "shutdown"]
+        pause.standardOutput = FileHandle.nullDevice
+        pause.standardError = FileHandle.nullDevice
+        do {
+            try pause.run()
+            pause.waitUntilExit()
+        } catch {
+            // Nothing further to do while terminating; the paused marker from
+            // a previous shutdown is cleared on next launch.
+        }
     }
 
-    private func registerLoginItem() {
+    private func unregisterLoginItem() {
+        // The skin only applies while the app is explicitly running, so the
+        // app must not start itself at login.
         guard #available(macOS 13.0, *) else { return }
-        if SMAppService.mainApp.status == .notRegistered {
-            try? SMAppService.mainApp.register()
+        if SMAppService.mainApp.status != .notRegistered {
+            try? SMAppService.mainApp.unregister()
         }
     }
 
     private var commandScript: URL {
         guard let resources = Bundle.main.resourceURL else {
-            fatalError("AutoSkin.app has no resource directory")
+            fatalError("CodexSkin.app has no resource directory")
         }
         return resources.appendingPathComponent("autoskin-app-command.sh")
     }
@@ -44,8 +61,8 @@ private final class AutoSkinAppDelegate: NSObject, NSApplicationDelegate {
     private func buildMenu() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "paintpalette.fill", accessibilityDescription: "AutoSkin")
-            button.toolTip = "AutoSkin for Codex"
+            button.image = NSImage(systemSymbolName: "paintpalette.fill", accessibilityDescription: "CodexSkin")
+            button.toolTip = "CodexSkin for Codex"
         }
 
         let menu = NSMenu()
@@ -57,7 +74,7 @@ private final class AutoSkinAppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         menu.addItem(item("Open Theme Folder", #selector(openThemeFolder)))
         menu.addItem(.separator())
-        menu.addItem(item("Quit AutoSkin", #selector(quit), key: "q"))
+        menu.addItem(item("Quit CodexSkin", #selector(quit), key: "q"))
         statusItem.menu = menu
     }
 
@@ -89,7 +106,7 @@ private final class AutoSkinAppDelegate: NSObject, NSApplicationDelegate {
 
     private func setBusy(_ text: String?) {
         statusItem.button?.appearsDisabled = text != nil
-        statusItem.button?.toolTip = text ?? "AutoSkin for Codex"
+        statusItem.button?.toolTip = text ?? "CodexSkin for Codex"
     }
 
     private func runAction(
@@ -171,12 +188,12 @@ private final class AutoSkinAppDelegate: NSObject, NSApplicationDelegate {
         setBusy("Detecting Codex and themes…")
         worker.async { [weak self] in
             guard let self else { return }
-            let result = self.run("ensure")
+            let result = self.run("launch")
             DispatchQueue.main.async {
                 self.setBusy(nil)
                 self.refreshStatus()
                 if result.exitCode != 0 {
-                    self.showResult(title: "Automatic AutoSkin setup", result: result)
+                    self.showResult(title: "Automatic CodexSkin setup", result: result)
                 }
             }
         }

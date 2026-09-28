@@ -3,20 +3,21 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_ROOT="${1:-$REPO_ROOT/.build}"
-APP_BUNDLE="$BUILD_ROOT/AutoSkin.app"
+APP_BUNDLE="$BUILD_ROOT/CodexSkin.app"
 CONTENTS="$APP_BUNDLE/Contents"
 RESOURCES="$CONTENTS/Resources"
 RUNTIME="$RESOURCES/AutoSkinRuntime"
 
 case "$APP_BUNDLE" in
-  */.build/AutoSkin.app|*/AutoSkin.app) ;;
+  */.build/CodexSkin.app|*/CodexSkin.app) ;;
   *) echo "Refusing unexpected app output: $APP_BUNDLE" >&2; exit 1 ;;
 esac
 
 rm -rf "$APP_BUNDLE"
-mkdir -p "$CONTENTS/MacOS" "$RUNTIME"
+mkdir -p "$CONTENTS/MacOS" "$RUNTIME" "$CONTENTS/Resources"
 
 cp "$REPO_ROOT/app/macos/Info.plist" "$CONTENTS/Info.plist"
+cp "$REPO_ROOT/app/macos/assets/AppIcon.icns" "$CONTENTS/Resources/AppIcon.icns"
 cp "$REPO_ROOT/app/macos/autoskin-app-command.sh" "$RESOURCES/autoskin-app-command.sh"
 chmod 755 "$RESOURCES/autoskin-app-command.sh"
 
@@ -29,7 +30,7 @@ xcrun swiftc \
   -framework ServiceManagement \
   -target "$(uname -m)-apple-macos13.0" \
   "$REPO_ROOT/app/macos/AutoSkinApp.swift" \
-  -o "$CONTENTS/MacOS/AutoSkin"
+  -o "$CONTENTS/MacOS/CodexSkin"
 
 /usr/bin/codesign --force --deep --sign - "$APP_BUNDLE" >/dev/null
 /usr/bin/plutil -lint "$CONTENTS/Info.plist" >/dev/null

@@ -5,15 +5,17 @@
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
-  <string>AutoSkin</string>
+  <string>CodexSkin</string>
   <key>CFBundleExecutable</key>
-  <string>AutoSkin</string>
+  <string>CodexSkin</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
   <key>CFBundleIdentifier</key>
-  <string>app.autoskin.codex</string>
+  <string>app.codexskin.codex</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>AutoSkin</string>
+  <string>CodexSkin</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>

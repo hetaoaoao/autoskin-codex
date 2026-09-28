@@ -31,13 +31,19 @@
     "fullscreen": {
       "fit": "cover",
       "scale": 1,
-      "focalPoint": [1, 0.5],
+      "focalPoint": [
+        1,
+        0.5
+      ],
       "opacity": 1,
       "overlay": {
         "kind": "radial",
         "color": "#F2FDFF",
         "strength": 0.76,
-        "anchor": [0.21, 0.28]
+        "anchor": [
+          0.21,
+          0.28
+        ]
       },
       "preserveEdges": {
         "top": 0,
@@ -49,25 +55,37 @@
     "banner": {
       "fit": "cover",
       "scale": 1,
-      "focalPoint": [0.58, 0.38],
+      "focalPoint": [
+        0.58,
+        0.38
+      ],
       "opacity": 1,
       "overlay": {
         "kind": "linear",
         "color": "#F2FDFF",
         "strength": 0.98,
-        "anchor": [0, 0.5]
+        "anchor": [
+          0,
+          0.5
+        ]
       }
     },
     "chat": {
       "fit": "cover",
       "scale": 1,
-      "focalPoint": [0.54, 0.5],
+      "focalPoint": [
+        0.54,
+        0.5
+      ],
       "opacity": 0.32,
       "overlay": {
         "kind": "solid",
         "color": "#F8FEFF",
         "strength": 0.46,
-        "anchor": [0.5, 0.5]
+        "anchor": [
+          0.5,
+          0.5
+        ]
       }
     }
   },
@@ -131,7 +149,10 @@
       "kind": "text",
       "value": "❤",
       "surface": "home",
-      "position": [0.07, 0.12],
+      "position": [
+        0.07,
+        0.12
+      ],
       "color": "#F08FA9",
       "opacity": 0.68,
       "size": 8
@@ -140,7 +161,10 @@
       "kind": "text",
       "value": "❤",
       "surface": "home",
-      "position": [0.72, 0.19],
+      "position": [
+        0.72,
+        0.19
+      ],
       "color": "#F08FA9",
       "opacity": 0.68,
       "size": 8
@@ -149,13 +173,16 @@
       "kind": "text",
       "value": "❤",
       "surface": "all",
-      "position": [0.94, 0.36],
+      "position": [
+        0.94,
+        0.36
+      ],
       "color": "#F08FA9",
       "opacity": 0.58,
       "size": 8
     }
   ],
   "advanced": {
-    "customCss": null
+    "customCss": "custom-app-menu.css"
   }
 }
