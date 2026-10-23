@@ -36,6 +36,22 @@ theme CSS and verification use those markers instead of Codex build-time classes
 Observer re-runs discovery after navigation or a GUI update, while the recovery watcher treats an
 adapter confidence below the verification threshold as stale state.
 
+ChatGPT and Codex now share native home/suggestion markers. The adapter distinguishes their
+layouts by the hero/suggestions/editor relationship: only Codex places the hero and cards in a
+branch separate from the editor. ChatGPT's Chat and Work homes retain their native geometry and
+paint the common frame containing the mode switch. Codex fullscreen art paints the main frame,
+so both canvases start near the top of the pane independently of native toolbar spacers.
+Read-only thread regions remain conversation surfaces even when no editor is mounted.
+
+The observer disconnects during each skin update and reconnects afterward. Native child, text,
+visibility, and class changes schedule one bounded refresh; skin-authored changes cannot trigger
+their own refresh loop. Resize listeners are removed on cleanup and reinjection.
+
+`node skill/scripts/tests/test-renderer-adapter.mjs` exercises these cases in an isolated headless
+Chrome profile (override the executable with `CHROME_BIN`). The macOS runtime regression suite
+also runs it when Chrome is available. The live UI audit samples layout stability and checks the
+mode switch's hit targets and canvas alignment at every viewport/layout combination.
+
 ## Build and install
 
 ```bash

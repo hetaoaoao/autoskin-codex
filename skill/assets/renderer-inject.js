@@ -11,8 +11,8 @@
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
   const USAGE_STORAGE_KEY = "codex-dream-skin.usage-percent";
   const USAGE_RESET_STORAGE_KEY = "codex-dream-skin.usage-reset-at";
-  const STYLE_VERSION = "32";
-  const ADAPTER_VERSION = "semantic-3";
+  const STYLE_VERSION = "33";
+  const ADAPTER_VERSION = "semantic-4";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -33,6 +33,7 @@
   if (previous?.observer) previous.observer.disconnect();
   if (previous?.timer) clearInterval(previous.timer);
   if (previous?.scheduler?.timeout) clearTimeout(previous.scheduler.timeout);
+  if (previous?.onResize) window.removeEventListener("resize", previous.onResize);
   const createObjectUrl = (dataUrl) => {
     const comma = dataUrl.indexOf(",");
     const mime = dataUrl.slice(5, dataUrl.indexOf(";")) || "image/png";
@@ -594,6 +595,11 @@
     return surface || form;
   };
 
+  const findConversation = (scope) => scope ? [...scope.querySelectorAll(
+    '[data-thread-find-target="conversation"], [data-app-action-timeline-scroll], ' +
+    '[role="region"][aria-label="Conversation"], [role="region"][aria-label="对话"]'
+  )].find(isVisibleInViewport) ?? null : null;
+
   const resolveHome = (mainSurface) => {
     const candidates = unique([
       ...document.querySelectorAll('[role="main"]'),
@@ -601,17 +607,30 @@
     ]).filter((node) => isVisibleInViewport(node) && mainSurface?.contains(node));
     const scored = candidates.map((node) => {
       const rect = node.getBoundingClientRect();
-      const hasMessages = [...node.querySelectorAll("article, [data-message-author-role]")].some(isVisibleInViewport);
-      const hasEditor = Boolean(findComposerSurface(node));
-      const workSignal = Boolean(node.querySelector(
-        '[data-testid="home-icon"], [data-feature="game-source"], [class*="home-suggestions"]'
-      ));
+      const hasMessages = Boolean(findConversation(node)) || [...node.querySelectorAll(
+        'article, [data-message-author-role], [data-user-message-bubble], [data-markdown-text-style="assistant-message"]'
+      )].some(isVisibleInViewport);
+      const editor = [...node.querySelectorAll('[role="textbox"][contenteditable="true"], textarea')]
+        .find(isVisibleInViewport);
+      const hero = [...node.querySelectorAll('[data-feature="game-source"]')].find(isVisibleInViewport);
+      const suggestions = node.querySelector('[class*="home-suggestions"]');
+      const homeIcon = [...node.querySelectorAll('[data-testid="home-icon"]')].find(isVisibleInViewport);
+      const homeContainer = classText(node).includes("home-main-content");
+      // ChatGPT now shares both game-source and home-suggestions with Codex.
+      // Its suggestions live BELOW the composer; Codex keeps them with the
+      // hero in a separate branch. Only that structure permits the Work art
+      // layout. Never turn an ordinary role=main conversation into a home
+      // merely because it has an editor (message markers also change).
+      const heroGroup = hero && suggestions ? commonAncestor([hero, suggestions], node) : null;
+      const workSignal = Boolean(homeIcon || (editor && heroGroup && !heroGroup.contains(editor)));
+      const homeSignal = homeContainer || homeIcon || hero || (suggestions && isVisibleInViewport(suggestions));
       let score = 0;
       if (node.getAttribute("role") === "main") score += 2;
       if (rect.width > innerWidth * 0.4 && rect.height > innerHeight * 0.45) score += 2;
-      if (hasEditor) score += 2;
+      if (editor) score += 2;
       if (workSignal) score += 3;
-      if (classText(node).includes("home-main-content")) score += 1;
+      if (homeContainer) score += 1;
+      if (!homeSignal) score = 0;
       if (hasMessages) score -= 5;
       return { node, score, workSignal };
     }).sort((left, right) => right.score - left.score);
@@ -620,7 +639,7 @@
     return { home: winner?.node ?? null, kind: winner ? (winner.workSignal ? "work" : "chat") : null };
   };
 
-  const ensure = () => {
+  const refresh = () => {
     if (window.__CODEX_DREAM_SKIN_DISABLED__) return;
     const root = document.documentElement;
     if (!root) return;
@@ -653,6 +672,11 @@
     }
 
     const shellMain = resolveMainSurface(sidePanel);
+    // Read native composer paint consistently, including during home scoring.
+    // All writes happen with our observer disconnected (see ensure below).
+    document.querySelectorAll(".dream-composer-surface").forEach((candidate) => {
+      candidate.classList.remove("dream-composer-surface");
+    });
     const resolvedHome = resolveHome(shellMain);
     const activeHome = resolvedHome.home;
     const workHome = resolvedHome.kind === "work" ? activeHome : null;
@@ -662,10 +686,10 @@
     let homeContent = heroSource || suggestions;
     while (homeContent && homeContent.parentElement !== workHome) homeContent = homeContent.parentElement;
     if (homeContent?.parentElement !== workHome) homeContent = null;
-    for (const candidate of document.querySelectorAll('[role="main"].dream-home')) {
+    for (const candidate of document.querySelectorAll('.dream-home')) {
       if (candidate !== workHome) candidate.classList.remove("dream-home");
     }
-    for (const candidate of document.querySelectorAll('[role="main"].dream-chat-home')) {
+    for (const candidate of document.querySelectorAll('.dream-chat-home')) {
       if (candidate !== chatHome) candidate.classList.remove("dream-chat-home");
     }
     for (const candidate of document.querySelectorAll(".dream-home-content")) {
@@ -674,13 +698,18 @@
     if (workHome) workHome.classList.add("dream-home");
     if (chatHome) chatHome.classList.add("dream-chat-home");
     if (homeContent) homeContent.classList.add("dream-home-content");
+    // The native Chat/Work switch sits beside, not inside, role=main. Paint
+    // their shared frame so its strip and the home use one aligned canvas.
+    const modeToggle = chatHome ? [...shellMain.querySelectorAll('[role="group"]')].find((group) =>
+      isVisibleInViewport(group) && ["Chat", "Work"].every((label) =>
+        [...group.querySelectorAll("button")].some((button) => button.textContent.trim() === label))
+    ) : null;
+    const chatFrame = chatHome && modeToggle ? commonAncestor([chatHome, modeToggle], shellMain) : chatHome;
+    markSingleton("dream-chat-home-frame", chatFrame);
+    markSingleton("dream-home-mode-toggle", modeToggle);
+    markSingleton("dream-work-home-frame", workHome ? shellMain : null);
 
-    // Remove our previous paint before resolving again. Otherwise computed
-    // style would treat the marker's own skin as a native composer signal.
-    document.querySelectorAll(".dream-composer-surface").forEach((candidate) => {
-      candidate.classList.remove("dream-composer-surface");
-    });
-    const composer = findComposerSurface(activeHome || document);
+    const composer = findComposerSurface(activeHome || shellMain || document);
     const resolvedUsage = resolveUsageData(sidePanel);
     if (Number.isFinite(resolvedUsage.percent)) {
       usagePercent = Math.max(0, Math.min(100, Math.round(resolvedUsage.percent)));
@@ -697,22 +726,33 @@
     document.querySelectorAll(".dream-usage-gauge").forEach((node) => node.remove());
     syncUsageOrb(composer);
     resolveHomeParts(workHome, heroSource, suggestions, workHome ? composer : null);
+    const conversation = !activeHome ? findConversation(shellMain) : null;
     const surfaceKind = workHome ? "work-home" : chatHome ? "chat-home" :
-      composer ? "conversation" : "utility";
+      composer || conversation ? "conversation" : "utility";
     adapterState.signals.surface = surfaceKind;
+    adapterState.signals.readOnly = Boolean(conversation && !composer);
     adapterState.signals.composer = composer ? "semantic-editor" :
-      surfaceKind === "utility" ? "not-applicable" : "missing";
+      surfaceKind === "utility" || conversation ? "not-applicable" : "missing";
     adapterState.confidence = Math.min(1,
       (sidePanel ? 0.25 : (!sidePanel && innerWidth < 800 ? 0.2 : 0)) +
-      (shellMain ? 0.2 : 0) + (composer ? 0.3 : 0) +
+      (shellMain ? 0.2 : 0) + (composer || conversation ? 0.3 : 0) +
       (activeHome ? 0.1 : 0) +
       (workHome ? ((suggestions ? 0.1 : 0) + (heroSource ? 0.05 : 0)) :
         chatHome ? 0.15 : surfaceKind === "utility" ? 0.25 : 0.15)
     );
 
     if (!shellMain || !document.body) return;
+    for (const candidate of document.querySelectorAll('.dream-home-shell, .dream-conversation-shell')) {
+      if (candidate !== shellMain && candidate.id !== CHROME_ID) {
+        candidate.classList.remove('dream-home-shell', 'dream-conversation-shell');
+      }
+    }
     shellMain.classList.toggle("dream-home-shell", Boolean(activeHome));
     shellMain.classList.toggle("dream-conversation-shell", surfaceKind === "conversation");
+    // New releases place the titlebar outside main. Reserve only an actual
+    // in-pane header instead of leaving the old fixed 47 px unthemed strip.
+    const paneHeader = [...shellMain.children].find((node) => node.tagName === "HEADER" && isVisibleInViewport(node));
+    shellMain.style.setProperty("--dream-conversation-inset", `${paneHeader?.getBoundingClientRect().height ?? 0}px`);
     document.getElementById(LEGACY_CONTROLS_ID)?.remove();
     let chrome = document.getElementById(CHROME_ID);
     if (!chrome || chrome.parentElement !== document.body || chrome.dataset.dreamInjection !== INJECTION_ID) {
@@ -816,8 +856,12 @@
     document.querySelectorAll(".dream-new-task").forEach((node) => node.classList.remove("dream-new-task"));
     document.querySelectorAll(".dream-composer-surface").forEach((node) => node.classList.remove("dream-composer-surface"));
     document.querySelectorAll(".dream-usage-orb, .dream-usage-gauge").forEach((node) => node.remove());
-    for (const marker of ["dream-sidebar", "dream-main-surface", "dream-suggestions", "dream-hero-source", ...HOME_PART_MARKERS]) {
-      document.querySelectorAll(`.${marker}`).forEach((node) => node.classList.remove(marker));
+    for (const marker of ["dream-sidebar", "dream-main-surface", "dream-suggestions", "dream-hero-source",
+      "dream-chat-home-frame", "dream-home-mode-toggle", "dream-work-home-frame", ...HOME_PART_MARKERS]) {
+      document.querySelectorAll(`.${marker}`).forEach((node) => {
+        node.classList.remove(marker);
+        if (marker === "dream-main-surface") node.style.removeProperty("--dream-conversation-inset");
+      });
     }
     document.getElementById(STYLE_ID)?.remove();
     document.getElementById(CHROME_ID)?.remove();
@@ -826,6 +870,7 @@
     state?.observer?.disconnect();
     if (state?.timer) clearInterval(state.timer);
     if (state?.scheduler?.timeout) clearTimeout(state.scheduler.timeout);
+    if (state?.onResize) window.removeEventListener("resize", state.onResize);
     for (const assets of Object.values(state?.artUrls || {})) {
       if (assets.home) URL.revokeObjectURL(assets.home);
       if (assets.chat && assets.chat !== assets.home) URL.revokeObjectURL(assets.chat);
@@ -834,16 +879,33 @@
     return true;
   };
 
+  const observationOptions = {
+    childList: true, subtree: true, characterData: true,
+    attributes: true, attributeFilter: ["class", "hidden", "aria-hidden", "inert"],
+  };
+  const ensure = () => {
+    // textContent and appended decorations create childList records even when
+    // the visual content is unchanged. Observing our own pass schedules an
+    // endless 180 ms refresh loop and amplifies any layout misclassification.
+    observer.disconnect();
+    try { refresh(); }
+    finally {
+      if (!window.__CODEX_DREAM_SKIN_DISABLED__) {
+        observer.observe(document.documentElement, observationOptions);
+      }
+    }
+  };
   const scheduler = { timeout: null };
   const scheduleEnsure = () => {
-    if (scheduler.timeout) clearTimeout(scheduler.timeout);
+    if (scheduler.timeout) return;
     scheduler.timeout = setTimeout(() => {
       scheduler.timeout = null;
       ensure();
     }, 180);
   };
   const observer = new MutationObserver(scheduleEnsure);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(document.documentElement, observationOptions);
+  window.addEventListener("resize", scheduleEnsure);
   const timer = setInterval(ensure, 5000);
   window[STATE_KEY] = {
     ensure,
@@ -851,6 +913,7 @@
     observer,
     timer,
     scheduler,
+    onResize: scheduleEnsure,
     artUrls,
     artSigs,
     themes: [...THEME_ORDER],
@@ -865,12 +928,12 @@
     },
     get usagePercent() { return usagePercent; },
     get usageResetAt() { return usageResetAt; },
-    version: "3.5.6"
+    version: "3.5.7"
   };
   ensure();
   return {
     installed: true,
-    version: "3.5.6",
+    version: "3.5.7",
     layout: activeLayout,
     theme: activeTheme,
     themes: [...THEME_ORDER],

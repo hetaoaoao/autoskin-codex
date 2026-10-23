@@ -747,6 +747,8 @@ async function verifySession(session) {
     const state = window.__CODEX_DREAM_SKIN_STATE__;
     const surfaceKind = state?.adapter?.signals?.surface ??
       (homeKind ? homeKind + '-home' : composer ? 'conversation' : 'utility');
+    const readOnlyConversation = surfaceKind === 'conversation' && state?.adapter?.signals?.readOnly === true &&
+      Boolean(firstVisible('[data-thread-find-target="conversation"], [data-app-action-timeline-scroll], [role="region"][aria-label="Conversation"], [role="region"][aria-label="对话"]'));
     const result = {
       installed: document.documentElement.classList.contains('codex-dream-skin'),
       version: state?.version ?? null,
@@ -761,9 +763,10 @@ async function verifySession(session) {
       homePresent: Boolean(home),
       homeKind,
       surfaceKind,
+      readOnlyConversation,
       suggestionsPresent: Boolean(suggestions),
       hero: box(heroSource || (workHome ? firstVisible(".dream-home-hero", workHome) : null)),
-      chatCanvas: chatHome ? getComputedStyle(chatHome, '::before').backgroundImage : null,
+      chatCanvas: chatHome ? getComputedStyle(firstVisible('.dream-chat-home-frame') || chatHome, '::before').backgroundImage : null,
       cards,
       composer: box(composer),
       sidebar: box(sidebar),
@@ -774,6 +777,9 @@ async function verifySession(session) {
       },
     };
     const composerLooksLocal = Boolean(result.composer) &&
+      result.composer.x >= 0 && result.composer.y >= 0 &&
+      result.composer.x + result.composer.width <= result.viewport.width + 1 &&
+      result.composer.y + result.composer.height <= result.viewport.height + 1 &&
       result.composer.height < result.viewport.height * 0.45 &&
       result.composer.width * result.composer.height <
         result.viewport.width * result.viewport.height * 0.5;
@@ -783,7 +789,7 @@ async function verifySession(session) {
       result.adapter?.version && result.adapter.confidence >= 0.65 &&
       !result.legacyControlsPresent &&
       result.chromePointerEvents === 'none' &&
-      (result.surfaceKind === 'utility' || composerLooksLocal) && Boolean(result.sidebar) &&
+      (result.surfaceKind === 'utility' || readOnlyConversation || composerLooksLocal) && Boolean(result.sidebar) &&
       (!result.homePresent ||
         (result.homeKind === 'chat' && result.chatCanvas && result.chatCanvas !== 'none') ||
         (result.homeKind === 'work' && Boolean(result.hero) &&

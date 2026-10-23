@@ -93,6 +93,14 @@ grep -q 'setAttribute("role", "progressbar")' "$ROOT/assets/renderer-inject.js" 
 grep -q 'getQueryData(\["rate-limit-status"\])' "$ROOT/assets/renderer-inject.js" || \
   fail "usage orb does not read Codex rate-limit reset data"
 
+CHROME_BIN="${CHROME_BIN:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
+if [ -x "$CHROME_BIN" ]; then
+  echo "Checking renderer discovery and observer stability in isolated Chrome..."
+  CHROME_BIN="$CHROME_BIN" "$NODE_BIN" "$ROOT/scripts/tests/test-renderer-adapter.mjs"
+else
+  echo "Skipping browser adapter tests (set CHROME_BIN to run them)."
+fi
+
 echo "Checking that the public runtime has no bundled fallback themes..."
 if "$NODE_BIN" "$ROOT/scripts/injector.mjs" --themes >"$TMP_ROOT/themes.json" 2>"$TMP_ROOT/themes.error"; then
   fail "public runtime unexpectedly discovered a bundled fallback theme"
@@ -270,7 +278,7 @@ echo "Checking repeatable uninstall without a backup..."
 rm -f "$INSTALLED_ROOT/config.before-dream-skin.toml"
 for _ in 1 2; do
   HOME="$TEST_HOME" bash "$ROOT/scripts/restore-dream-skin.sh" \
-    --uninstall --restore-base-theme --node "$NODE_BIN" >/dev/null
+    --uninstall --restore-base-theme --port 19337 --node "$NODE_BIN" >/dev/null
 done
 [ ! -e "$TEST_HOME/Library/Application Support/CodexAutoSkin/runtime" ] || fail "runtime was not removed"
 [ ! -e "$TEST_HOME/Library/Application Support/CodexAutoSkin/install-state.json" ] || fail "install state was not removed"

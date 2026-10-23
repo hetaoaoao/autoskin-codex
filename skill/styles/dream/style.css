@@ -279,7 +279,7 @@ html.codex-dream-skin .dream-main-surface.dream-conversation-shell::before {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 47px 0 0;
+  inset: var(--dream-conversation-inset, 0px) 0 0;
   pointer-events: none;
   opacity: var(--dream-chat-art-opacity);
   background-image: var(--dream-chat-art);
@@ -293,7 +293,7 @@ html.codex-dream-skin .dream-main-surface.dream-conversation-shell::after {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 47px 0 0;
+  inset: var(--dream-conversation-inset, 0px) 0 0;
   pointer-events: none;
   background: linear-gradient(90deg, var(--dream-chat-wash) 0%, rgba(255, 253, 251, .62) 48%, rgba(255, 253, 251, .38) 100%);
 }
@@ -666,11 +666,17 @@ html.codex-dream-skin .dream-chat-home {
   overflow-x: hidden !important;
 }
 
-html.codex-dream-skin .dream-chat-home::before {
+html.codex-dream-skin .dream-chat-home-frame {
+  position: relative !important;
+  isolation: isolate;
+}
+
+html.codex-dream-skin .dream-chat-home-frame::before,
+html.codex-dream-skin.dream-layout-fullscreen .dream-work-home-frame::before {
   content: "";
   position: absolute;
-  z-index: 0;
-  inset: 14px 16px 16px;
+  z-index: -1;
+  inset: 8px 16px 16px;
   pointer-events: none;
   border: 2px solid color-mix(in srgb, var(--dream-pink) 56%, #ffffff);
   border-radius: 28px;
@@ -682,11 +688,6 @@ html.codex-dream-skin .dream-chat-home::before {
   background-size: 100% 100%, var(--dream-fullscreen-art-size);
   background-position: center, var(--dream-fullscreen-art-position);
   box-shadow: 0 18px 42px rgba(72, 20, 91, .24), inset 0 0 0 4px rgba(255, 255, 255, .22);
-}
-
-html.codex-dream-skin .dream-chat-home > * {
-  position: relative;
-  z-index: 1;
 }
 
 .dream-home > .dream-home-content {
@@ -1047,29 +1048,26 @@ html.dream-layout-fullscreen .dream-home .dream-home-hero {
   height: auto !important;
   min-height: 0 !important;
   overflow: hidden !important;
-  border-color: rgba(255, 218, 238, .86) !important;
+  border: 0 !important;
   border-radius: 28px !important;
-  background-size: 100% 100%, var(--dream-fullscreen-art-size) !important;
-  background-position: center, var(--dream-fullscreen-art-position) !important;
-  box-shadow: 0 18px 42px rgba(72, 20, 91, .34), inset 0 0 0 4px rgba(255, 255, 255, .18) !important;
+  /* The art belongs to the main frame, above the native home toolbar spacer.
+     Keep hero/card geometry independent from the background's top edge. */
+  background: none !important;
+  box-shadow: none !important;
 }
 
-html.dream-layout-fullscreen .dream-home .dream-home-hero::before {
-  /* Width 100% + a radial/vertical gradient in --dream-fullscreen-overlay turns
-     this into the "scene" preset for full-canvas art (see THEME-SPEC.md §5.1). */
-  width: var(--dream-fullscreen-overlay-width);
-  border-radius: 26px 0 0 26px;
-  background: var(--dream-fullscreen-overlay);
+html.codex-dream-skin.dream-layout-fullscreen .dream-work-home-frame::before {
+  background-image:
+    linear-gradient(var(--dream-fullscreen-wash), var(--dream-fullscreen-wash)),
+    var(--dream-fullscreen-overlay),
+    var(--dream-home-art);
+  background-size: 100% 100%, var(--dream-fullscreen-overlay-width) 100%, var(--dream-fullscreen-art-size);
+  background-position: center, left center, var(--dream-fullscreen-art-position);
 }
 
+html.dream-layout-fullscreen .dream-home .dream-home-hero::before,
 html.dream-layout-fullscreen .dream-home .dream-home-hero::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  pointer-events: none;
-  border-radius: 26px;
-  background: var(--dream-fullscreen-wash);
+  content: none;
 }
 
 html.dream-layout-fullscreen .dream-home .dream-home-copy {
@@ -1197,9 +1195,22 @@ html.codex-dream-skin .ProseMirror {
 /* Theme-configurable home composer placeholder (theme.json composer.placeholder
    -> --dream-composer-placeholder). The var fallback keeps the native text, so
    removing the injected stylesheet restores the original automatically. */
-html.codex-dream-skin .dream-home .ProseMirror p[data-placeholder]::after {
+html.codex-dream-skin :is(.dream-home, .dream-chat-home) .ProseMirror p[data-placeholder] {
+  position: relative;
+}
+
+html.codex-dream-skin :is(.dream-home, .dream-chat-home) .ProseMirror p[data-placeholder]::before {
   content: var(--dream-composer-placeholder, attr(data-placeholder)) !important;
   color: color-mix(in srgb, var(--dream-ink) 52%, #ffffff) !important;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Current native editors paint their hint in ::before. Do not add a second
+   line through the old ::after hook used by earlier Codex versions. */
+html.codex-dream-skin :is(.dream-home, .dream-chat-home) .ProseMirror p[data-placeholder]::after {
+  content: none !important;
 }
 
 html.codex-dream-skin button[class~="bg-token-foreground"] {

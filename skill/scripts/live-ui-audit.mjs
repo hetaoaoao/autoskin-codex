@@ -91,7 +91,8 @@ class Session {
       returnByValue: true,
       awaitPromise: true,
     });
-    if (response.exceptionDetails) throw new Error(response.exceptionDetails.text);
+    if (response.exceptionDetails) throw new Error(
+      response.exceptionDetails.exception?.description ?? response.exceptionDetails.text);
     return response.result?.value;
   }
 
@@ -100,7 +101,7 @@ class Session {
   }
 }
 
-const auditExpression = `(() => {
+const auditExpression = `(async () => {
   const visible = (node) => {
     if (!node || !node.isConnected || !node.getClientRects().length) return false;
     if (node.closest('[hidden], [aria-hidden="true"], [inert]')) return false;
@@ -123,13 +124,15 @@ const auditExpression = `(() => {
   const state = window.__CODEX_DREAM_SKIN_STATE__;
   const workHome = first('.dream-home');
   const chatHome = first('.dream-chat-home');
+  const chatFrame = first('.dream-chat-home-frame');
   const composerNode = first('.composer-surface-chrome, .dream-composer-surface');
   const composer = box(composerNode);
   const usageOrbNode = first('.dream-usage-orb');
   const usageFillNode = usageOrbNode?.querySelector(':scope > .dream-usage-orb-fill') ?? null;
   const usageOrb = box(usageOrbNode);
-  const surface = workHome ? 'work-home' : chatHome ? 'chat-home' :
-    composerNode ? 'conversation' : 'utility';
+  const surface = state?.adapter?.signals?.surface ?? (workHome ? 'work-home' : chatHome ? 'chat-home' :
+    composerNode ? 'conversation' : 'utility');
+  const composerExpected = surface !== 'utility' && !state?.adapter?.signals?.readOnly;
   const sidebarNode = first('.dream-sidebar');
   const sidebar = box(sidebarNode);
   const mainNode = first('.dream-main-surface');
@@ -145,6 +148,16 @@ const auditExpression = `(() => {
     .filter((node) => visible(node) && !composerNode?.contains(node) && !node.closest('header')) : [];
   const modeButtons = [...document.querySelectorAll('button')].filter((node) =>
     visible(node) && ['Chat', 'Work'].includes((node.innerText || '').trim()));
+  const modeBoxes = modeButtons.map(box);
+  // Sample through more than two observer delays: a single screenshot can
+  // miss the old alternating composer/home geometry entirely.
+  await new Promise((resolve) => setTimeout(resolve, 450));
+  const sameBox = (left, right) => !left || !right ? left === right :
+    ['x', 'y', 'width', 'height'].every((key) => Math.abs(left[key] - right[key]) <= 1);
+  const layoutStable = sameBox(main, box(first('.dream-main-surface'))) &&
+    sameBox(composer, box(first('.composer-surface-chrome, .dream-composer-surface'))) &&
+    modeButtons.every((button, index) => sameBox(modeBoxes[index], box(button))) &&
+    state?.adapter?.signals?.surface === surface;
   const measured = [hero, ...cards, composer, usageOrb].filter(Boolean);
   const usagePercent = Number(usageOrbNode?.dataset.dreamUsagePercent);
   const usageFillPercent = usageFillNode ?
@@ -153,6 +166,7 @@ const auditExpression = `(() => {
   const checks = {
     skinInstalled: document.documentElement.classList.contains('codex-dream-skin'),
     adapterConfident: Boolean(state?.adapter?.version) && state.adapter.confidence >= 0.65,
+    layoutStable,
     mainFound: Boolean(main),
     sidebarFoundOrCollapsed: Boolean(sidebar) || innerWidth < 800,
     sidebarHit: !sidebar || sidebarNode.contains(document.elementFromPoint(
@@ -161,7 +175,7 @@ const auditExpression = `(() => {
       const rect = button.getBoundingClientRect();
       return button.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
     }),
-    usageOrb: surface === 'utility' || (Number.isFinite(usagePercent) &&
+    usageOrb: !composerExpected || (Number.isFinite(usagePercent) &&
       usagePercent >= 0 && usagePercent <= 100 &&
       Boolean(usageFillNode) && Math.abs(usageFillPercent - usagePercent) <= 2 &&
       getComputedStyle(usageOrbNode, '::before').backgroundColor !== 'rgba(0, 0, 0, 0)' &&
@@ -171,9 +185,9 @@ const auditExpression = `(() => {
       Boolean(usageOrb && composer && usageOrb.width === 22 && usageOrb.height === 22 &&
         Math.abs(usageOrb.x - (composer.x - 11)) <= 2 &&
         Math.abs(usageOrb.y - (composer.y - 11)) <= 2)),
-    composerLocal: surface === 'utility' || (Boolean(composer) && composer.height < innerHeight * .45 &&
+    composerLocal: !composerExpected || (Boolean(composer) && composer.height < innerHeight * .45 &&
       composer.width * composer.height < innerWidth * innerHeight * .5),
-    composerHit: surface === 'utility' || Boolean(composerNode && composer &&
+    composerHit: !composerExpected || Boolean(composerNode && composer &&
       composerNode.contains(document.elementFromPoint(composer.x + composer.width / 2, composer.y + composer.height / 2))),
     noDocumentOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth &&
       document.documentElement.scrollHeight <= document.documentElement.clientHeight,
@@ -183,7 +197,17 @@ const auditExpression = `(() => {
       intersection(hero, composer) === 0,
     surfaceComplete: surface === 'work-home' ? Boolean(hero) &&
       (!suggestionsNode || (cards.length >= 2 && cards.length <= 4)) :
-      surface === 'chat-home' ? getComputedStyle(chatHome, '::before').backgroundImage !== 'none' : true,
+      surface === 'chat-home' ? Boolean(chatFrame) && getComputedStyle(chatFrame, '::before').backgroundImage !== 'none' : true,
+    homeModeToggleInCanvas: surface !== 'chat-home' || modeButtons.every((button) => {
+      const rect = button.getBoundingClientRect();
+      const frame = chatFrame?.getBoundingClientRect();
+      return frame && chatFrame.contains(button) && rect.left >= frame.left + 16 &&
+        rect.right <= frame.right - 16 && rect.top >= frame.top + 8 && rect.bottom <= frame.bottom - 16;
+    }),
+    fullscreenCanvasAtTop: surface !== 'work-home' || state?.layout !== 'fullscreen' ||
+      (mainNode.classList.contains('dream-work-home-frame') &&
+        parseFloat(getComputedStyle(mainNode, '::before').top) === 8 &&
+        getComputedStyle(mainNode, '::before').backgroundImage !== 'none'),
     conversationContentVisible: surface !== 'conversation' || messages.length > 0,
     utilityHasNoConversationArt: surface !== 'utility' ||
       !mainNode.classList.contains('dream-conversation-shell'),
@@ -235,8 +259,9 @@ try {
   if (original.layout) {
     await session.evaluate(`(() => {
       const state = window.__CODEX_DREAM_SKIN_STATE__;
-      state.setLayout(${JSON.stringify(original.layout)}, true);
-      state.ensure();
+      localStorage.setItem('codex-dream-skin.layout', ${JSON.stringify(original.layout)});
+      state?.setLayout(${JSON.stringify(original.layout)}, true);
+      state?.ensure();
       return true;
     })()`);
   }
