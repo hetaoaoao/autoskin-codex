@@ -45,7 +45,10 @@ Read-only thread regions remain conversation surfaces even when no editor is mou
 
 The observer disconnects during each skin update and reconnects afterward. Native child, text,
 visibility, and class changes schedule one bounded refresh; skin-authored changes cannot trigger
-their own refresh loop. Resize listeners are removed on cleanup and reinjection.
+their own refresh loop. When a native class replacement removes layout markers from a mounted
+surface, discovery runs in the observer microtask before paint so repeated commits cannot flash
+the native composer width during the debounce delay. Resize listeners are removed on cleanup
+and reinjection.
 
 `node skill/scripts/tests/test-renderer-adapter.mjs` exercises these cases in an isolated headless
 Chrome profile (override the executable with `CHROME_BIN`). The macOS runtime regression suite

@@ -78,12 +78,12 @@ if grep -q 'dream-main-surface > \*' "$ROOT/styles/dream/style.css"; then
 fi
 grep -q 'const localSurface' "$ROOT/assets/renderer-inject.js" || \
   fail "composer resolver can still promote a whole-page painted ancestor"
-grep -q 'remainingPercent' "$ROOT/assets/renderer-inject.js" || \
-  fail "usage gauge does not consume Codex remaining quota semantically"
+echo "Checking weekly quota freshness and reset consistency..."
+"$NODE_BIN" "$ROOT/scripts/tests/test-usage-orb.mjs"
 grep -q 'usageOrb' "$ROOT/scripts/live-ui-audit.mjs" || \
   fail "live UI audit does not verify the usage orb"
 grep -q 'dream-usage-orb' "$ROOT/assets/renderer-inject.js" || \
-  fail "weekly usage is not rendered as a composer orb"
+  fail "weekly usage is not rendered as an orb"
 grep -q 'dream-usage-orb-fill' "$ROOT/assets/renderer-inject.js" || \
   fail "weekly usage heart has no liquid fill element"
 grep -q 'removeAttribute("title")' "$ROOT/assets/renderer-inject.js" || \

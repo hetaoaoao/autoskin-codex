@@ -59,7 +59,8 @@ try {
   const template = await fs.readFile(path.join(root, 'assets/renderer-inject.js'), 'utf8');
   const art = 'data:image/svg+xml;base64,' + Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="skyblue"/></svg>').toString('base64');
   const manifest = { order: ['test'], defaultTheme: 'test', defaultLayout: 'fullscreen',
-    meta: { test: { brand: 'Test', edition: 'Adapter', signature: 'QA' } } };
+    meta: { test: { brand: 'Test', edition: 'Adapter', signature: 'QA' } },
+    decorations: { test: [{kind:'text',surface:'home',position:[.9,.2],opacity:.5,size:12,color:'#abcdef',value:'♡'}] } };
   const payload = template.replace('__DREAM_CSS_JSON__', () => JSON.stringify(css))
     .replace('__DREAM_ART_ASSETS_JSON__', () => JSON.stringify({ test: { home: art, chat: art } }))
     .replace('__DREAM_MANIFEST_JSON__', () => JSON.stringify(manifest));
@@ -85,8 +86,12 @@ try {
       .chat-frame .dock{flex:none}.mode-row{height:46px;flex:none;display:flex;align-items:center;justify-content:center}
       [aria-label="Composer mode"]{height:30px} [aria-label="Composer mode"] button{height:30px;width:80px}
       .thread{display:flex;flex-direction:column;justify-content:space-between;padding:20px}
-    </style><header></header><aside><nav><button>Home</button><button>New task</button><button>Settings</button></nav></aside><main>${content}</main>`;
+    </style><header></header><aside><nav><button>Home</button><button>New task</button><button>Settings</button></nav>
+      <button id="usage-trigger" aria-label="Usage" aria-description="Native usage information" aria-describedby="native-help"
+        style="position:absolute;left:8px;bottom:60px;width:36px;height:36px"><span id="native-usage-icon">◉</span></button>
+      <span id="native-help" hidden>Native help</span></aside><main>${content}</main>`;
     await evaluate(`window.__CODEX_DREAM_SKIN_STATE__?.cleanup();document.body.innerHTML=${JSON.stringify(fixture)};true`);
+    await evaluate(`window.nativeUsageClicks=0;document.querySelector('#usage-trigger').addEventListener('click',()=>{window.nativeUsageClicks++;});true`);
     await evaluate(payload);
   };
   const snapshot = () => evaluate(`(() => {
@@ -114,6 +119,8 @@ try {
     await setup(html);
     const first = await snapshot();
     assert.equal(first.surface, expected, name);
+    if (expected === 'conversation') assert.equal(await evaluate(`getComputedStyle(document.querySelector('.dream-autoskin-decoration')).display`),
+      'none', 'home decorations must be hidden on conversation surfaces');
     if (expected === 'work-home') assert.equal(first.workCanvasTop, '8px', 'Codex canvas must reach the main pane top');
     if (expected.endsWith('-home')) assert.deepEqual(first.placeholder,
       ['"在清凉水花里写下你的想法…"', 'none'], 'home must show one Chinese hint without duplicate English');
@@ -133,6 +140,39 @@ try {
     assert.equal(settled.scheduled, false, `${name}: self-triggered observer loop`);
     console.log(`PASS ${name}`);
   }
+  const attachmentComposer = editor.replace('class="native-composer"', 'class="native-composer attachment-composer"')
+    .replace('<div class="ProseMirror"', '<div role="img" aria-label="Image attachment" style="width:120px;height:120px"></div><div class="ProseMirror"');
+  for (const layout of ['fullscreen', 'banner']) {
+    await setup(`${codex.replace(editor, attachmentComposer)}<style>
+      .attachment-composer{width:min(100%, var(--thread-content-max-width, 736px));height:220px}
+    </style>`);
+    await evaluate(`window.__CODEX_DREAM_SKIN_STATE__.setLayout(${JSON.stringify(layout)});true`);
+    const empty = await snapshot();
+    assert.equal(empty.surface, 'work-home');
+    assert.ok(empty.box[2] > 736, `${layout}: fixture must start with the wider Work composer`);
+    await evaluate(`(() => {
+      document.querySelector('.ProseMirror').addEventListener('input', () => {
+        document.querySelector('[class*="home-suggestions"]')?.remove();
+      }, {once: true});
+      document.querySelector('.ProseMirror').focus();
+      return true;
+    })()`);
+    await send('Input.insertText', {text: '帮我'});
+    await delay(350);
+    const typed = await snapshot();
+    assert.equal(typed.surface, 'work-home', `${layout}: removing suggestions must retain the Work home`);
+    assert.deepEqual([typed.box[0], typed.box[2]], [empty.box[0], empty.box[2]], `${layout}: typing must preserve width and alignment`);
+    assert.equal(await evaluate(`document.querySelector('.ProseMirror').textContent`), '帮我');
+    assert.equal(await evaluate(`document.querySelectorAll('#composer [role="img"]').length`), 1);
+    await evaluate(`document.querySelector('[role="main"]').insertAdjacentHTML('afterbegin',
+      '<section role="region" aria-label="Conversation"><p>A real message</p></section>');true`);
+    await delay(350);
+    const thread = await snapshot();
+    assert.equal(thread.surface, 'conversation', 'a visible conversation must supersede the retained Work home');
+    assert.equal(thread.box[2], 736, 'the thread must use its own composer width');
+  }
+  console.log('PASS composer width while typing with an attachment');
+  await evaluate(`window.__CODEX_DREAM_SKIN_STATE__.setLayout('fullscreen');true`);
   await setup(conversation(true) + `<div hidden>${codex}</div>`);
   assert.equal((await snapshot()).surface, 'conversation', 'hidden home must not replace a conversation');
   await evaluate(`document.querySelector('.dream-main-surface').className='native-main';true`);
@@ -146,10 +186,65 @@ try {
   assert.equal((await snapshot()).surface, 'work-home', 'return navigation must refresh markers');
   assert.equal(await evaluate(`document.querySelectorAll('.dream-chat-home-frame,.dream-home-mode-toggle').length`), 0, 'chat markers must be removed after navigation');
   console.log('PASS hidden homes, native class replacement, and navigation');
+  // React replaces className on mounted native nodes. The home width and
+  // composer skin must survive that commit before the next paint, rather
+  // than flashing back to native geometry for the debounced refresh delay.
+  const beforeNativeCommit = await snapshot();
+  await evaluate(`(() => {
+    document.querySelector('.dream-home').className='home-main-content';
+    document.querySelector('#composer').className='native-composer';
+    return true;
+  })()`);
+  const afterNativeCommit = await snapshot();
+  assert.equal(afterNativeCommit.home, 1, 'native class replacement must restore home markers before paint');
+  assert.equal(afterNativeCommit.composer, 'composer', 'native class replacement must restore composer before paint');
+  assert.deepEqual(afterNativeCommit.box, beforeNativeCommit.box, 'native commits must not expose an unskinned composer');
+  assert.equal(afterNativeCommit.scheduled, false, 'immediate restoration must cancel the pending debounced refresh');
+  console.log('PASS native class replacement without a debounced layout flash');
+  assert.deepEqual(await evaluate(`Array.from(document.querySelectorAll('.dream-suggestion-card'), n=>n.dataset.dreamCardIndex)`),
+    ['1', '2'], 'native suggestion buttons need stable theme indices without grid class assumptions');
+  for (const label of ['New task', 'New chat', '新建对话']) {
+    await evaluate(`(() => {const b=document.querySelector('aside nav button:nth-child(2)');b.textContent=${JSON.stringify(label)};
+      const history=document.createElement('button');history.id='history';history.textContent='New chat architecture review';
+      document.querySelector('aside nav').append(history);window.__CODEX_DREAM_SKIN_STATE__.ensure();return true;})()`);
+    assert.equal(await evaluate(`document.querySelector('.dream-new-task')?.textContent`), label);
+    assert.equal(await evaluate(`document.querySelector('#history').classList.contains('dream-new-task')`), false,
+      'a thread title containing New chat must never become the new-chat capsule');
+    await evaluate(`document.querySelector('#history').remove();true`);
+  }
+  console.log('PASS current new-chat labels and stable suggestion indices');
+  await evaluate(`document.querySelector('.dream-composer-surface').insertAdjacentHTML('beforeend','<span class="dream-usage-orb"></span>');window.__CODEX_DREAM_SKIN_STATE__.ensure();true`);
+  assert.equal(await evaluate(`document.querySelectorAll('.dream-usage-orb').length`), 1);
+  assert.equal(await evaluate(`document.querySelector('.dream-usage-orb').parentElement.id`), 'usage-trigger');
+  assert.equal(await evaluate(`document.querySelectorAll('.dream-composer-surface .dream-usage-orb').length`), 0);
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('#native-usage-icon')).visibility`), 'hidden');
+  assert.equal(await evaluate(`document.querySelector('.dream-usage-orb').hasAttribute('tabindex')`), false);
+  assert.equal(await evaluate(`(()=>{const b=document.querySelector('#usage-trigger'),r=b.getBoundingClientRect();
+    return b.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})()`), true,
+    'native button must remain the hit target under the custom orb');
+  await send('Emulation.setFocusEmulationEnabled', {enabled:true});
+  await evaluate(`document.querySelector('#usage-trigger').focus();true`);
+  assert.equal(await evaluate(`document.querySelector('#codex-dream-skin-usage-tooltip')?.parentElement===document.body`), true,
+    'tooltip must escape the clipped sidebar');
+  assert.equal(await evaluate(`document.querySelector('#codex-dream-skin-usage-tooltip').hidden`), false);
+  await send('Input.dispatchKeyEvent', {type:'keyDown',key:' ',code:'Space',windowsVirtualKeyCode:32});
+  await send('Input.dispatchKeyEvent', {type:'keyUp',key:' ',code:'Space',windowsVirtualKeyCode:32});
+  assert.equal(await evaluate(`window.nativeUsageClicks`), 1, 'keyboard activation must retain the native action');
+  assert.equal(await evaluate(`document.querySelector('#codex-dream-skin-usage-tooltip').hidden`), true);
+  await evaluate(`document.querySelector('#usage-trigger').innerHTML='<span id="native-usage-icon">◉</span>';window.__CODEX_DREAM_SKIN_STATE__.ensure();true`);
+  assert.equal(await evaluate(`document.querySelectorAll('#usage-trigger .dream-usage-orb').length`), 1,
+    'native rerenders must restore exactly one orb');
+  assert.equal(await evaluate(`document.querySelector('#usage-trigger').getAttribute('aria-description')`), 'Native usage information');
+  console.log('PASS native usage placement, keyboard action, tooltip portal and rerender');
   await evaluate(`(() => {const p=document.querySelector('.ProseMirror p');p.removeAttribute('data-placeholder');p.classList.remove('placeholder');p.textContent='Keep this draft';window.__CODEX_DREAM_SKIN_STATE__.ensure();return true;})()`);
   assert.equal(await evaluate(`document.querySelector('.ProseMirror').textContent`), 'Keep this draft', 'placeholder styling must preserve typed content');
   console.log('PASS Chinese placeholder and draft preservation');
   await evaluate('window.__CODEX_DREAM_SKIN_STATE__.cleanup();true');
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('#native-usage-icon')).visibility`), 'visible');
+  assert.equal(await evaluate(`document.querySelector('#usage-trigger').getAttribute('aria-describedby')`), 'native-help');
+  assert.equal(await evaluate(`document.querySelector('#codex-dream-skin-usage-tooltip')`), null);
+  await evaluate(`document.querySelector('#usage-trigger').click();true`);
+  assert.equal(await evaluate(`window.nativeUsageClicks`), 2, 'cleanup must restore the original control without replacing its handler');
   assert.equal(await evaluate(`document.querySelectorAll('[class*="dream-"]').length`), 0, 'cleanup must remove all markers');
   console.log('PASS cleanup');
 } finally {

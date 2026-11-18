@@ -127,9 +127,12 @@ const auditExpression = `(async () => {
   const chatFrame = first('.dream-chat-home-frame');
   const composerNode = first('.composer-surface-chrome, .dream-composer-surface');
   const composer = box(composerNode);
-  const usageOrbNode = first('.dream-usage-orb');
+  // The meter is decorative inside the accessible native button (aria-hidden).
+  const usageOrbNode = document.querySelector('.dream-native-usage > .dream-usage-orb');
   const usageFillNode = usageOrbNode?.querySelector(':scope > .dream-usage-orb-fill') ?? null;
   const usageOrb = box(usageOrbNode);
+  const nativeUsageButton = first('button[aria-label="Usage"], button[aria-label="用量"], button[aria-label="使用量"], button[aria-label="额度"]');
+  const nativeUsageBox = box(nativeUsageButton);
   const surface = state?.adapter?.signals?.surface ?? (workHome ? 'work-home' : chatHome ? 'chat-home' :
     composerNode ? 'conversation' : 'utility');
   const composerExpected = surface !== 'utility' && !state?.adapter?.signals?.readOnly;
@@ -159,7 +162,17 @@ const auditExpression = `(async () => {
     modeButtons.every((button, index) => sameBox(modeBoxes[index], box(button))) &&
     state?.adapter?.signals?.surface === surface;
   const measured = [hero, ...cards, composer, usageOrb].filter(Boolean);
-  const usagePercent = Number(usageOrbNode?.dataset.dreamUsagePercent);
+  const usageValue = usageOrbNode?.dataset.dreamUsagePercent;
+  const usagePercent = usageValue ? Number(usageValue) : NaN;
+  const usageAvailable = Number.isFinite(usagePercent);
+  const usageSemantics = usageAvailable ?
+    usagePercent >= 0 && usagePercent <= 100 &&
+      Number(usageOrbNode.getAttribute('aria-valuenow')) === usagePercent &&
+      /Weekly.*% remaining/.test(usageOrbNode.dataset.tooltip || '') &&
+      (state?.usageResetAt == null || /Resets/.test(usageOrbNode.dataset.tooltip || '')) :
+    usageOrbNode?.dataset.level === 'unknown' &&
+      !usageOrbNode.hasAttribute('aria-valuenow') &&
+      usageOrbNode.dataset.tooltip === 'Weekly usage unavailable';
   const usageFillPercent = usageFillNode ?
     parseFloat(getComputedStyle(usageFillNode, '::before').height) /
       usageFillNode.getBoundingClientRect().height * 100 : NaN;
@@ -175,16 +188,20 @@ const auditExpression = `(async () => {
       const rect = button.getBoundingClientRect();
       return button.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
     }),
-    usageOrb: !composerExpected || (Number.isFinite(usagePercent) &&
-      usagePercent >= 0 && usagePercent <= 100 &&
-      Boolean(usageFillNode) && Math.abs(usageFillPercent - usagePercent) <= 2 &&
+    usageOrb: !nativeUsageButton ? document.querySelectorAll('.dream-usage-orb').length === 0 : (usageSemantics &&
+      document.querySelectorAll('.dream-usage-orb').length === 1 &&
+      usageOrbNode.parentElement === nativeUsageButton &&
+      !document.querySelector('.dream-composer-surface .dream-usage-orb') &&
+      !usageOrbNode.hasAttribute('tabindex') &&
+      Boolean(usageFillNode) && Math.abs(usageFillPercent - (usageAvailable ? usagePercent : 0)) <= 2 &&
       getComputedStyle(usageOrbNode, '::before').backgroundColor !== 'rgba(0, 0, 0, 0)' &&
       getComputedStyle(usageOrbNode).borderRadius === '50%' &&
       !usageOrbNode.hasAttribute('title') &&
-      usageOrbNode.textContent.trim() === '' && /% remaining.*Resets/.test(usageOrbNode.dataset.tooltip || '') &&
-      Boolean(usageOrb && composer && usageOrb.width === 22 && usageOrb.height === 22 &&
-        Math.abs(usageOrb.x - (composer.x - 11)) <= 2 &&
-        Math.abs(usageOrb.y - (composer.y - 11)) <= 2)),
+      usageOrbNode.textContent.trim() === '' &&
+      Boolean(usageOrb && nativeUsageBox && usageOrb.width === 26 && usageOrb.height === 26 &&
+        Math.abs(usageOrb.x + 13 - (nativeUsageBox.x + nativeUsageBox.width / 2)) <= 2 &&
+        Math.abs(usageOrb.y + 13 - (nativeUsageBox.y + nativeUsageBox.height / 2)) <= 2 &&
+        nativeUsageButton.contains(document.elementFromPoint(usageOrb.x + 13, usageOrb.y + 13)))),
     composerLocal: !composerExpected || (Boolean(composer) && composer.height < innerHeight * .45 &&
       composer.width * composer.height < innerWidth * innerHeight * .5),
     composerHit: !composerExpected || Boolean(composerNode && composer &&
