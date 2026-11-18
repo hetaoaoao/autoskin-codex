@@ -16,11 +16,17 @@ does not depend on installing a Codex Skill.
 
 It keeps source images as ordinary files, separates official Codex appearance values from runtime
 styling, and previews fullscreen home, Banner, and new-chat surfaces independently before touching
-the live app. The repository includes a complete **Chiikawa Summer Pool** worked example.
+the live app. The repository includes two editable themes,
+[Chiikawa Summer Pool](skill/examples/chiikawa-summer) and
+[Hachiware Popsicle Club](skill/examples/hachiware-five).
 
-This is the only bundled editable example. The upstream Aurora Veil and Ember Bloom demo themes are
-not redistributed. The safe runtime, generator, previewer, and installer remain complete; cloned or
-newly generated themes are installed into durable `themes-private/` storage.
+The app installs Summer Pool on first launch. Use this command to install Popsicle Club.
+
+```bash
+python3 skill/scripts/install_theme.py skill/examples/hachiware-five --apply
+```
+
+Installed themes are stored in `themes-private/` and persist across runtime upgrades.
 
 ## Preview
 

@@ -13,8 +13,8 @@ copied or modified. This skill includes the adapted runtime under `scripts/`,
 
 The public package does not redistribute the upstream demo themes. Its runtime `themes/` directory
 is intentionally empty, and user-selected themes are installed under durable `themes-private/`
-storage. The only bundled worked example is `examples/chiikawa-summer/`, governed by its separate
-asset notice below.
+storage. The editable themes are `examples/chiikawa-summer/` and `examples/hachiware-five/`.
+Each has a separate asset notice.
 
 This skill replaces the upstream authoring contract with:
 

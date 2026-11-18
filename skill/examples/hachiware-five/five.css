@@ -1,0 +1,205 @@
+/* Five Hachiware: a complete component skin derived from the Summer system.
+   All native controls remain real; artwork and ornaments never receive input. */
+html.dream-theme-hachiware-five {
+  --club-blue: #579DC0;
+  --club-red: #EB9B9E;
+  --club-yellow: #EACB65;
+  --club-green: #A7C878;
+  --club-sky: #8BC5E3;
+  --dream-fullscreen-overlay-width: 60%;
+  --dream-card-height: clamp(145px, 18cqh, 178px);
+  --dream-card-ornament: #E9B674;
+}
+html.dream-theme-hachiware-five body {
+  background: radial-gradient(ellipse at 78% 0, #D4EEFC, transparent 48%), linear-gradient(135deg, #EBF8FD, #FFF6D7) !important;
+}
+html.dream-theme-hachiware-five body::before {
+  opacity: .22;
+  background-image: radial-gradient(circle, #83C5DF 0 1px, transparent 1.5px), radial-gradient(circle, #E8B4BB 0 1px, transparent 1.5px);
+  background-size: 54px 54px, 78px 78px;
+}
+html.dream-theme-hachiware-five .dream-main-surface {
+  border-color: #CAE7EF !important;
+  background: linear-gradient(180deg, #F0FAFF, #FFFAE9) !important;
+  box-shadow: inset 0 1px #FFFFFF, -6px 0 24px #81B6CD12 !important;
+}
+html.dream-theme-hachiware-five .dream-work-home-frame::before,
+html.dream-theme-hachiware-five .dream-chat-home-frame::before {
+  border: 2px solid #FFFFFFC9;
+  border-radius: 30px;
+  box-shadow: 0 12px 32px #4E94B329, inset 0 0 0 5px #FFFFFF38;
+}
+html.dream-theme-hachiware-five.dream-layout-fullscreen .dream-home .dream-home-cards { top: 56% !important; }
+html.dream-theme-hachiware-five .dream-home .dream-home-hero {
+  border-color: #ACD8E9 !important;
+  background-color: #ECF9FF !important;
+  box-shadow: 0 14px 32px #6BA5BF24, inset 0 0 0 4px #FFFFFF58 !important;
+}
+html.dream-theme-hachiware-five.dream-layout-fullscreen .dream-home .dream-home-hero {
+  background: none !important;
+  box-shadow: none !important;
+}
+html.dream-theme-hachiware-five .dream-hero-source button {
+  border: 1px solid #8CC5DE !important;
+  background: linear-gradient(145deg, #FFFFFFDD, #EFFAFFC4) !important;
+  color: #3E86A8 !important;
+  box-shadow: 0 4px 12px #73B6CF24, inset 0 1px white;
+}
+/* Header branding and the native application switcher. */
+html.dream-theme-hachiware-five .dream-brand { gap: 7px; color: #357D9F; }
+html.dream-theme-hachiware-five .dream-brand b { font-weight: 750; letter-spacing: .05em; }
+html.dream-theme-hachiware-five .dream-brand small { color: #7AA4B8; font-size: 9px; letter-spacing: .1em; }
+html.dream-theme-hachiware-five #codex-dream-skin-chrome .dream-brand .dream-note::after { width: 42px; height: 42px; filter: drop-shadow(0 2px 2px #80B3CB38); }
+html.dream-theme-hachiware-five .dream-signature {
+  color: #D68F9A;
+  font: 650 16px/1.3 -apple-system, BlinkMacSystemFont, sans-serif;
+  text-shadow: 0 1px #FFFFFF;
+  transform: rotate(-2deg);
+}
+html.dream-theme-hachiware-five .dream-sidebar button[aria-label^="Switch mode"],
+html.dream-theme-hachiware-five .dream-sidebar button[aria-label^="切换模式"] {
+  color: #3B82A6 !important;
+  font-weight: 750 !important;
+  text-shadow: 0 2px 6px #B5E1EF70;
+}
+html.dream-theme-hachiware-five .dream-sidebar button[aria-label^="Switch mode"]::after,
+html.dream-theme-hachiware-five .dream-sidebar button[aria-label^="切换模式"]::after { width: 30px; height: 30px; margin-top: -15px !important; }
+html.dream-theme-hachiware-five [role="menu"][data-radix-menu-content] {
+  background: linear-gradient(150deg, #F9FDFF, #FFFBEA) !important;
+  border: 1px solid #C2E0EB;
+  box-shadow: 0 12px 32px #5187A12B;
+}
+html.dream-theme-hachiware-five [role="menuitem"]:focus { background: #DFF1FA !important; }
+/* Sidebar: soda-paper texture, little character stamps, capsule and avatar. */
+html.dream-theme-hachiware-five .dream-sidebar {
+  background: linear-gradient(180deg, #E7F5FE, #F6FCFF 48%, #FFF9E7) !important;
+  border-color: #C0E0ED !important;
+  box-shadow: 5px 0 22px #79AFC71C, inset -1px 0 #FFFFFF !important;
+}
+html.dream-theme-hachiware-five .dream-sidebar::before {
+  opacity: .15;
+  background-image: var(--autoskin-brand-icon), var(--autoskin-card-icon-3), radial-gradient(circle, #7BB2CD 0 1px, transparent 1.5px);
+  background-size: 170px 170px, 110px 110px, 24px 24px;
+  background-position: right -24px bottom 80px, left -22px top 24%, center;
+  background-repeat: no-repeat, no-repeat, repeat;
+  filter: none;
+}
+html.dream-theme-hachiware-five .dream-sidebar button:hover {
+  background: linear-gradient(90deg, #DDEFF9, #FFF5DD) !important;
+  box-shadow: inset 0 0 0 1px #ADCFDF80 !important;
+}
+html.dream-theme-hachiware-five .dream-sidebar [aria-current="page"] {
+  border-color: #9DCADC !important;
+  background: linear-gradient(100deg, #D3EDF9, #FDF9DF) !important;
+  box-shadow: 0 3px 10px #76A9C026 !important;
+}
+html.dream-theme-hachiware-five .dream-sidebar button.dream-new-task {
+  position: relative !important;
+  min-height: 42px;
+  padding-left: 48px !important;
+  justify-content: flex-start !important;
+  border: 1px solid #8EBED6 !important;
+  background: linear-gradient(120deg, #C5EAFB, #E5F5FC 68%, #FFF1B9) !important;
+  box-shadow: 0 6px 16px #579DC02B, inset 0 1px #FFFFFF !important;
+}
+html.dream-theme-hachiware-five .dream-sidebar button.dream-new-task,
+html.dream-theme-hachiware-five .dream-sidebar button.dream-new-task * { color: #2F6C8A !important; font-weight: 700; }
+html.dream-theme-hachiware-five .dream-new-task svg { display: none; }
+html.dream-theme-hachiware-five .dream-new-task::before {
+  content: "";
+  position: absolute; left: 10px; top: 3px; width: 34px; height: 34px;
+  background: var(--autoskin-brand-icon) center / contain no-repeat;
+  pointer-events: none;
+}
+html.dream-theme-hachiware-five .dream-new-task::after { content: "✦"; color: #D4AF51; margin-left: auto; padding-right: 10px; pointer-events: none; }
+html.dream-theme-hachiware-five .dream-sidebar button[aria-label="Open profile menu"],
+html.dream-theme-hachiware-five .dream-sidebar button[aria-label="打开个人资料菜单"] {
+  border: 1px solid #A8CEE1 !important;
+  background: linear-gradient(135deg, #FFF8D8, #E2F3FC) !important;
+  box-shadow: 0 5px 14px #7FB1C62B, inset 0 0 0 2px #FFFFFFAA !important;
+}
+html.dream-theme-hachiware-five .dream-sidebar button[aria-label="Open profile menu"]::after,
+html.dream-theme-hachiware-five .dream-sidebar button[aria-label="打开个人资料菜单"]::after { color: #DE93A0; }
+/* Stable, adapter-owned card indices; no Codex build-time grid classes. */
+html.dream-theme-hachiware-five .dream-suggestion-card[data-dream-card-index="1"] { --club-card: #EAA0A4; --club-card-wash: #FFF2F0; --autoskin-card-image: var(--autoskin-card-icon-1); }
+html.dream-theme-hachiware-five .dream-suggestion-card[data-dream-card-index="2"] { --club-card: #DDBA55; --club-card-wash: #FFFBE3; --autoskin-card-image: var(--autoskin-card-icon-2); }
+html.dream-theme-hachiware-five .dream-suggestion-card[data-dream-card-index="3"] { --club-card: #9DBE71; --club-card-wash: #F3F9E9; --autoskin-card-image: var(--autoskin-card-icon-3); }
+html.dream-theme-hachiware-five .dream-suggestion-card[data-dream-card-index="4"] { --club-card: #82B9D8; --club-card-wash: #EAF8FF; --autoskin-card-image: var(--autoskin-card-icon-4); }
+html.dream-theme-hachiware-five .dream-home .dream-suggestions button.dream-suggestion-card {
+  border: 1px solid color-mix(in srgb, var(--club-card) 65%, white) !important;
+  border-radius: 22px !important;
+  background: linear-gradient(155deg, #FFFFFFAF, color-mix(in srgb, var(--club-card-wash) 65%, transparent)) !important;
+  box-shadow: 0 9px 24px #5C97B31C, inset 0 0 0 3px #FFFFFF59 !important;
+  backdrop-filter: blur(10px);
+}
+html.dream-theme-hachiware-five .dream-home .dream-suggestions button.dream-suggestion-card::before {
+  content: "" !important; display: block !important; position: absolute; inset: 7px;
+  border: 1px dashed color-mix(in srgb, var(--club-card) 55%, transparent); border-radius: 16px; pointer-events: none;
+}
+html.dream-theme-hachiware-five .dream-suggestion-card > span:first-child > span:first-child {
+  width: 70px; height: 70px; border-radius: 0; background: none; box-shadow: none;
+  filter: drop-shadow(0 4px 3px #739FB42B); transition: transform .18s ease;
+}
+html.dream-theme-hachiware-five .dream-home .dream-suggestions button.dream-suggestion-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 13px 28px #619BB92B, 0 0 0 2px color-mix(in srgb, var(--club-card) 22%, transparent) !important;
+}
+html.dream-theme-hachiware-five .dream-suggestion-card:hover > span:first-child > span:first-child { transform: rotate(-5deg) scale(1.06); }
+/* Composer: transparent wrapper, glass fill, inner rim and a mascot on the lip. */
+html.dream-theme-hachiware-five .dream-composer-surface {
+  background: linear-gradient(145deg, #FFFFFFF2, #FFFAE8EB 65%, #EAF7FCE8) !important;
+  border: 2px solid #A8D3E7 !important;
+  border-radius: 26px !important;
+  box-shadow: 0 14px 34px #4F94B42B, inset 0 0 0 4px #FFFFFF85 !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  backdrop-filter: blur(18px) !important;
+}
+html.dream-theme-hachiware-five .dream-composer-surface::before {
+  content: "" !important; display: block; position: absolute;
+  width: 72px; height: 72px; right: 20px; top: -57px;
+  background: var(--autoskin-brand-icon) center / contain no-repeat;
+  filter: drop-shadow(0 3px 2px #6B9EB631);
+  pointer-events: none;
+}
+html.dream-theme-hachiware-five .dream-composer-surface:focus-within {
+  border-color: #69AFD0 !important;
+  box-shadow: 0 14px 34px #4F94B42B, 0 0 0 3px #D6EFFA80, inset 0 0 0 4px #FFFFFF85 !important;
+}
+html.dream-theme-hachiware-five .dream-composer-surface [role="textbox"] {
+  color: #294F63 !important; caret-color: #E493A0 !important;
+}
+html.dream-theme-hachiware-five .dream-composer-surface button[aria-label="Attach files or connect apps"],
+html.dream-theme-hachiware-five .dream-composer-surface button[aria-label="Add files and more"],
+html.dream-theme-hachiware-five .dream-composer-surface button[aria-label="添加文件等内容"] {
+  color: #3F88AD !important; background: #F7FCFF !important; border: 1px solid #A3CDDF !important;
+  box-shadow: 0 3px 8px #70A7BD1A;
+}
+html.dream-theme-hachiware-five .dream-usage-orb { box-shadow: 0 0 0 3px #FFFFFFAA, 0 3px 10px #70B0CB42; }
+/* Low-contrast conversation canvas and compatible native code blocks. */
+html.dream-theme-hachiware-five .dream-main-surface.dream-conversation-shell::before { filter: none; }
+html.dream-theme-hachiware-five .dream-main-surface.dream-conversation-shell::after { background: linear-gradient(90deg, #FFFEF329, #F7FCFF12); }
+html.dream-theme-hachiware-five .dream-conversation-shell pre { border: 1px solid #C9E2EB; border-radius: 15px; box-shadow: 0 4px 16px #86B4C014; }
+/* Small ornaments; the banner keeps the original Summer polaroid treatment. */
+html.dream-theme-hachiware-five #codex-dream-skin-chrome .dream-sparkles { opacity: .42; }
+html.dream-theme-hachiware-five .dream-sparkles i { box-shadow: 0 0 8px 2px #A6DDEF88; }
+html.dream-theme-hachiware-five .dream-polaroid { border-color: #FFFEF4; box-shadow: 0 9px 20px #7DA8BC38, 0 0 0 1px #BAD4E5; }
+html.dream-theme-hachiware-five .dream-polaroid::before { content: ""; width: 38px; height: 38px; top: -22px; left: -16px; background: var(--autoskin-brand-icon) center / contain no-repeat; }
+html.dream-theme-hachiware-five .dream-autoskin-decoration { filter: drop-shadow(0 2px 2px #729FB426); }
+@media (max-width: 1100px) {
+  html.dream-theme-hachiware-five .dream-autoskin-decoration { display: none; }
+  html.dream-theme-hachiware-five .dream-composer-surface::before { width: 56px; height: 56px; top: -44px; right: 14px; }
+  html.dream-theme-hachiware-five.dream-layout-fullscreen .dream-home .dream-home-cards { top: 52% !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.dream-theme-hachiware-five .dream-suggestion-card:hover,
+  html.dream-theme-hachiware-five .dream-suggestion-card:hover > span:first-child > span:first-child,
+  html.dream-theme-hachiware-five .dream-new-task:hover { transform: none !important; transition: none !important; }
+}
+/* Let positioned native suggestion rows respect both side insets. */
+html.dream-theme-hachiware-five .dream-home .dream-home-cards { width: auto !important; }
+/* Chat home gets its own quieter composition, separate from Work's artwork. */
+html.dream-theme-hachiware-five .dream-chat-home-frame::before {
+  background-image: linear-gradient(#FFFEF312, #FFFEF312), var(--dream-chat-art);
+  background-size: 100% 100%, cover;
+  background-position: center, right center;
+}

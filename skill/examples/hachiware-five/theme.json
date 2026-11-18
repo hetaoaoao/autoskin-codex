@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 2,
+  "id": "hachiware-five",
+  "meta": {
+    "name": "五小八 · 棒冰俱乐部",
+    "shortName": "五小八俱乐部",
+    "edition": "POPSICLE CLUB · FIVE FRIENDS",
+    "signature": "五份可爱，一起开工 ♡",
+    "author": "原图：小红书「乌吉八嘿」；imagegen 编辑适配与私人主题定制"
+  },
+  "nativeTheme": {
+    "appearance": "light",
+    "accent": "#519DBF",
+    "surface": "#F4FBFC",
+    "ink": "#294F63",
+    "contrast": 66,
+    "opaqueWindows": true
+  },
+  "assets": {
+    "background": "assets/club-background-v2.png",
+    "chatBackground": "assets/chat-background-lower.png",
+    "brandIcon": "assets/brand-blue.png",
+    "cardIcons": [
+      "assets/card-red.png",
+      "assets/card-yellow.png",
+      "assets/card-green.png",
+      "assets/card-skyblue.png"
+    ]
+  },
+  "views": {
+    "fullscreen": {
+      "fit": "cover",
+      "scale": 1,
+      "focalPoint": [
+        1,
+        0.5
+      ],
+      "opacity": 1,
+      "overlay": {
+        "kind": "radial",
+        "color": "#F7FCF6",
+        "strength": 0.18,
+        "anchor": [
+          0.16,
+          0.3
+        ]
+      },
+      "preserveEdges": {
+        "top": 0.04,
+        "right": 0.05,
+        "bottom": 0.03,
+        "left": 0
+      }
+    },
+    "banner": {
+      "fit": "cover",
+      "scale": 0.68,
+      "focalPoint": [
+        1,
+        0.12
+      ],
+      "opacity": 1,
+      "overlay": {
+        "kind": "linear",
+        "color": "#F7FCF6",
+        "strength": 0.92,
+        "anchor": [
+          0.16,
+          0.3
+        ]
+      },
+      "preserveEdges": {
+        "top": 0.04,
+        "right": 0.05,
+        "bottom": 0.03,
+        "left": 0
+      }
+    },
+    "chat": {
+      "fit": "cover",
+      "scale": 1,
+      "focalPoint": [
+        1,
+        0.5
+      ],
+      "opacity": 0.48,
+      "overlay": {
+        "kind": "solid",
+        "color": "#F7FCF6",
+        "strength": 0.13,
+        "anchor": [
+          0.16,
+          0.3
+        ]
+      },
+      "preserveEdges": {
+        "top": 0.04,
+        "right": 0.05,
+        "bottom": 0.03,
+        "left": 0
+      }
+    }
+  },
+  "components": {
+    "chrome": {
+      "background": "#EFF9FD",
+      "title": "#3E87AB",
+      "border": "#A9D9EC"
+    },
+    "sidebar": {
+      "background": "#EAF7FC",
+      "text": "#345E75",
+      "active": "#D2EDF7",
+      "newTask": "#77B8D8"
+    },
+    "cards": {
+      "fill": "#F8FDFF",
+      "opacity": 0.48,
+      "blur": 10,
+      "radius": 22,
+      "border": "#B8DEEC",
+      "shadow": "0 10px 26px rgba(63, 136, 169, 0.10)",
+      "title": "#31586D",
+      "subtitle": "#5D8193"
+    },
+    "composer": {
+      "fill": "#FFFEF7",
+      "opacity": 0.91,
+      "blur": 18,
+      "radius": 26,
+      "shadow": "0 14px 34px rgba(57, 135, 171, 0.17)",
+      "outerBackground": "transparent",
+      "text": "#294F63"
+    }
+  },
+  "content": {
+    "heroTitle": "今天和五小八在 {{project}} 做点什么？",
+    "heroSubtitle": "一根棒冰，五份灵感，慢慢把想法变成现实 ✦",
+    "composerPlaceholder": "小八们就位啦，写下你的新点子…",
+    "cards": [
+      {
+        "title": "探索并理解代码",
+        "subtitle": "红小八陪你，认真发现每条线索"
+      },
+      {
+        "title": "构建新功能、应用或工具",
+        "subtitle": "黄小八开工，把灵感变成作品"
+      },
+      {
+        "title": "审查代码并提出修改建议",
+        "subtitle": "绿小八检查，细节也闪闪发亮"
+      },
+      {
+        "title": "修复问题和失败",
+        "subtitle": "蓝小八陪你，问题慢慢就解决了"
+      }
+    ]
+  },
+  "decorations": [
+    {
+      "kind": "image",
+      "asset": "assets/card-yellow.png",
+      "surface": "home",
+      "position": [
+        0.045,
+        0.76
+      ],
+      "opacity": 0.9,
+      "size": 74
+    },
+    {
+      "kind": "image",
+      "asset": "assets/card-green.png",
+      "surface": "home",
+      "position": [
+        0.955,
+        0.75
+      ],
+      "opacity": 0.9,
+      "size": 70
+    },
+    {
+      "kind": "text",
+      "value": "♡",
+      "surface": "home",
+      "position": [
+        0.08,
+        0.16
+      ],
+      "color": "#EF9FA8",
+      "opacity": 0.72,
+      "size": 18
+    },
+    {
+      "kind": "text",
+      "value": "✦",
+      "surface": "all",
+      "position": [
+        0.96,
+        0.48
+      ],
+      "color": "#EDC760",
+      "opacity": 0.55,
+      "size": 14
+    }
+  ],
+  "advanced": {
+    "customCss": "five.css"
+  }
+}

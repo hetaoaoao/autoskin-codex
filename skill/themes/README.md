@@ -2,5 +2,6 @@
 
 This directory is intentionally empty of bundled fallback themes.
 
-The public package includes only the editable `examples/chiikawa-summer/` worked example. Clone or
-build that example—or create a new theme—then install it into durable `themes-private/` storage.
+The editable packages are [Chiikawa Summer Pool](../examples/chiikawa-summer) and
+[Hachiware Popsicle Club](../examples/hachiware-five). Install an example or your own theme into
+durable `themes-private/` storage.

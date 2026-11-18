@@ -30,13 +30,15 @@ AutoSkin Codex 对实际界面中的多个部位提供深度个性化订制。�
 
 > 不只换一张背景图：先分别预览每个界面，再把确认过的皮肤安全安装到真实 Codex。
 
-仓库随附一套完整的 **Chiikawa 夏日泳池主题**。本项目适合对 Codex 自定义皮肤有更深度
-个性化订制需求的用户，也适合喜爱 Chiikawa 三小只、想直接使用夏日泳池主题的宝宝们。
-你既可以从内置示例直接开始，也可以让 Codex 根据自己的图片生成新的主题、预览图和可安装包。
+仓库随附两个可编辑主题：[Chiikawa 夏日泳池](skill/examples/chiikawa-summer)和
+[五小八 · 棒冰俱乐部](skill/examples/hachiware-five)。应用首次启动时安装夏日泳池。
+用下面的命令安装棒冰俱乐部。
 
-公开包只附带这一套可编辑示例，不再捆绑上游项目的极光夜空与暖光花瓣演示主题。安全运行时、
-主题生成器和安装流程仍完整保留；克隆示例或生成自己的主题后，会安装到独立且可持续保留的
-`themes-private/` 目录。
+```bash
+python3 skill/scripts/install_theme.py skill/examples/hachiware-five --apply
+```
+
+已安装的主题保存在 `themes-private/` 目录，升级运行时时会保留。
 
 ## 效果预览
 
@@ -47,14 +49,16 @@ AutoSkin Codex 对实际界面中的多个部位提供深度个性化订制。�
 
 ### Chiikawa Fan Art 声明
 
-内置示例包含基于 Chiikawa IP 创作的非官方、非商业 Fan Art。相关角色名称、形象及知识产权
+夏日泳池示例包含基于 Chiikawa IP 创作的非官方、非商业 Fan Art。相关角色名称、形象及知识产权
 归原作者 Nagano 与相应官方权利方所有。
 
 示例插画由用户独立创作并授权收录，并非从官方商品、网站、动画或应用中提取的官方素材。
 本项目与 Chiikawa、Nagano 及相关权利方不存在隶属、合作或认可关系，也不表示获得官方
 授权。Fan Art 素材仅供个人、非商业的界面定制与分享，请勿用于销售、付费分发或其他商业
-用途。完整说明见
-[`skill/examples/chiikawa-summer/ASSET-NOTICE.md`](skill/examples/chiikawa-summer/ASSET-NOTICE.md)。
+用途。
+
+主题素材分别有署名和使用说明。 [夏日泳池](skill/examples/chiikawa-summer/ASSET-NOTICE.md) ·
+[棒冰俱乐部](skill/examples/hachiware-five/ASSET-NOTICE.md)
 
 ## 30 秒开始
 
